@@ -1,76 +1,213 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useCallback, useEffect, useState } from 'react';
 import { useProjectStore } from '../../../stores/project-store';
-import { getTaskStatusColor, generateIdenticon } from '../../../lib/formatters';
+import type { PRDTask, PRDTaskStatus } from '@cam/shared';
+
+// --- Constants ---
+
+const NODE_WIDTH = 160;
+const NODE_HEIGHT = 48;
+const NODE_PAD_X = 40;
+const NODE_PAD_Y = 24;
+const MARGIN_TOP = 32;
+const MARGIN_LEFT = 24;
+
+// Status colours used for node borders, dots, and edge strokes.
+const STATUS_COLORS: Record<string, string> = {
+  backlog: '#6b7280',
+  planned: '#3b82f6',
+  pending: '#eab308',
+  in_progress: '#10b981',
+  in_review: '#a855f7',
+  completed: '#22c55e',
+  blocked: '#ef4444',
+  deferred: '#6b7280',
+};
+
+function statusColor(status: string): string {
+  return STATUS_COLORS[status] ?? '#6b7280';
+}
+
+function statusLabel(status: string): string {
+  return status.replace(/_/g, ' ');
+}
+
+// --- Types ---
 
 interface GraphNode {
   id: string;
   title: string;
-  status: string;
+  status: PRDTaskStatus;
+  col: number; // depth column (left-to-right)
+  row: number; // row within column
   x: number;
   y: number;
-  dependsOn: string[];
 }
+
+interface GraphEdge {
+  fromId: string;
+  toId: string;
+}
+
+// --- Layout helpers ---
+
+/**
+ * Compute the topological depth of each task.
+ * Tasks with no dependencies live at depth 0; a task that depends on
+ * depth-N tasks lives at depth N+1.
+ */
+function computeDepths(
+  tasks: PRDTask[],
+  edgeMap: Map<string, string[]>
+): Map<string, number> {
+  const depths = new Map<string, number>();
+
+  function resolve(id: string, visiting: Set<string>): number {
+    if (depths.has(id)) return depths.get(id)!;
+    if (visiting.has(id)) return 0; // cycle guard
+    visiting.add(id);
+
+    const deps = edgeMap.get(id) ?? [];
+    const maxParent = deps.reduce((mx, depId) => {
+      // only count deps that are in the task set
+      if (!edgeMap.has(depId) && !tasks.some((t) => t.id === depId)) return mx;
+      return Math.max(mx, resolve(depId, visiting));
+    }, -1);
+    const d = maxParent + 1;
+    depths.set(id, d);
+    return d;
+  }
+
+  const visiting = new Set<string>();
+  for (const t of tasks) {
+    resolve(t.id, visiting);
+  }
+  return depths;
+}
+
+// --- Component ---
 
 export function ModernDependencyGraph() {
   const { tasks } = useProjectStore();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
 
-  const graphData = useMemo(() => {
-    const tasksWithDeps = tasks.filter(
-      (t) => t.dependsOn.length > 0 || tasks.some((other) => other.dependsOn.includes(t.id))
-    );
+  // Build graph data ---------------------------------------------------------
 
-    if (tasksWithDeps.length === 0) return null;
+  const { nodes, edges, svgWidth, svgHeight, isEmpty } = useMemo(() => {
+    // Merge dependsOn + blockedBy into a single "depends-on" edge map.
+    // Both arrays express "this task cannot start until X finishes".
+    const edgeMap = new Map<string, string[]>();
+    for (const t of tasks) {
+      const combined = new Set<string>([...t.dependsOn, ...t.blockedBy]);
+      edgeMap.set(t.id, Array.from(combined));
+    }
 
-    // Simple layout: arrange nodes in rows by dependency depth
-    const depthMap = new Map<string, number>();
-
-    function getDepth(taskId: string, visited = new Set<string>()): number {
-      if (visited.has(taskId)) return 0;
-      visited.add(taskId);
-
-      if (depthMap.has(taskId)) return depthMap.get(taskId)!;
-      const task = tasks.find((t) => t.id === taskId);
-      if (!task || task.dependsOn.length === 0) {
-        depthMap.set(taskId, 0);
-        return 0;
+    // Only include tasks that participate in at least one dependency edge.
+    const participantIds = new Set<string>();
+    for (const t of tasks) {
+      const deps = edgeMap.get(t.id) ?? [];
+      if (deps.length > 0) {
+        participantIds.add(t.id);
+        for (const d of deps) participantIds.add(d);
       }
-
-      const maxDep = Math.max(...task.dependsOn.map((d) => getDepth(d, visited)));
-      const depth = maxDep + 1;
-      depthMap.set(taskId, depth);
-      return depth;
     }
 
-    tasksWithDeps.forEach((t) => getDepth(t.id));
+    const participantTasks = tasks.filter((t) => participantIds.has(t.id));
 
-    // Group by depth
-    const depthGroups = new Map<number, typeof tasksWithDeps>();
-    for (const task of tasksWithDeps) {
-      const depth = depthMap.get(task.id) || 0;
-      if (!depthGroups.has(depth)) depthGroups.set(depth, []);
-      depthGroups.get(depth)!.push(task);
+    if (participantTasks.length === 0) {
+      return { nodes: [] as GraphNode[], edges: [] as GraphEdge[], svgWidth: 0, svgHeight: 0, isEmpty: true };
     }
 
-    const maxDepth = Math.max(...Array.from(depthGroups.keys()), 0);
-    const nodes: GraphNode[] = [];
+    // Compute depths / columns
+    const depths = computeDepths(participantTasks, edgeMap);
 
-    for (const [depth, group] of depthGroups) {
-      group.forEach((task, i) => {
-        nodes.push({
-          id: task.id,
-          title: task.title.slice(0, 20),
-          status: task.status,
-          x: 40 + (depth / Math.max(maxDepth, 1)) * 220,
-          y: 20 + i * 40 + (depth % 2) * 15,
-          dependsOn: task.dependsOn,
+    // Group tasks by their depth column
+    const columns = new Map<number, PRDTask[]>();
+    for (const t of participantTasks) {
+      const d = depths.get(t.id) ?? 0;
+      if (!columns.has(d)) columns.set(d, []);
+      columns.get(d)!.push(t);
+    }
+
+    // Sort columns keys
+    const sortedCols = Array.from(columns.keys()).sort((a, b) => a - b);
+
+    // Build nodes with positions
+    const graphNodes: GraphNode[] = [];
+    for (const col of sortedCols) {
+      const group = columns.get(col)!;
+      // Sort within column: blocked first, then in_progress, then by title
+      const statusOrder: Record<string, number> = {
+        blocked: 0,
+        in_progress: 1,
+        in_review: 2,
+        pending: 3,
+        planned: 4,
+        backlog: 5,
+        completed: 6,
+        deferred: 7,
+      };
+      group.sort(
+        (a, b) =>
+          (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9) ||
+          a.title.localeCompare(b.title)
+      );
+
+      group.forEach((t, row) => {
+        const x = MARGIN_LEFT + col * (NODE_WIDTH + NODE_PAD_X);
+        const y = MARGIN_TOP + row * (NODE_HEIGHT + NODE_PAD_Y);
+        graphNodes.push({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          col,
+          row,
+          x,
+          y,
         });
       });
     }
 
-    return nodes;
+    // Build edges
+    const graphEdges: GraphEdge[] = [];
+    const nodeIds = new Set(graphNodes.map((n) => n.id));
+    for (const t of participantTasks) {
+      const deps = edgeMap.get(t.id) ?? [];
+      for (const depId of deps) {
+        if (nodeIds.has(depId)) {
+          graphEdges.push({ fromId: depId, toId: t.id });
+        }
+      }
+    }
+
+    // Compute SVG canvas size
+    const maxX = Math.max(...graphNodes.map((n) => n.x)) + NODE_WIDTH + MARGIN_LEFT;
+    const maxY = Math.max(...graphNodes.map((n) => n.y)) + NODE_HEIGHT + MARGIN_TOP;
+
+    return { nodes: graphNodes, edges: graphEdges, svgWidth: maxX, svgHeight: maxY, isEmpty: false };
   }, [tasks]);
 
-  if (!graphData || graphData.length === 0) {
+  // Keep scroll in view on first render
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ left: 0, top: 0 });
+  }, [nodes]);
+
+  // Quick look-up
+  const nodeById = useMemo(() => {
+    const m = new Map<string, GraphNode>();
+    for (const n of nodes) m.set(n.id, n);
+    return m;
+  }, [nodes]);
+
+  // Highlight edges connected to hovered node
+  const isEdgeHighlighted = useCallback(
+    (e: GraphEdge) => hovered !== null && (e.fromId === hovered || e.toId === hovered),
+    [hovered]
+  );
+
+  // --- Empty state ----------------------------------------------------------
+
+  if (isEmpty) {
     return (
       <div className="p-4 border-b border-cam-border/30">
         <div className="flex items-center justify-between mb-2">
@@ -85,79 +222,171 @@ export function ModernDependencyGraph() {
     );
   }
 
-  const maxY = Math.max(...graphData.map((n) => n.y)) + 40;
-  const height = Math.max(maxY, 80);
+  // --- Legend items ----------------------------------------------------------
+
+  const activeStatuses = Array.from(new Set(nodes.map((n) => n.status)));
+
+  // --- Render ---------------------------------------------------------------
 
   return (
     <div className="p-4 border-b border-cam-border/30">
+      {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] uppercase tracking-wider text-cam-text-muted font-medium">
           Dependencies
         </span>
-        <span className="text-[9px] text-cam-text-muted">{graphData.length} nodes</span>
+        <span className="text-[9px] text-cam-text-muted">
+          {nodes.length} tasks &middot; {edges.length} links
+        </span>
       </div>
 
-      <div className="overflow-auto modern-scrollbar">
-        <svg width="300" height={height} className="w-full">
-          {/* Edges */}
-          {graphData.map((node) =>
-            node.dependsOn.map((depId) => {
-              const dep = graphData.find((n) => n.id === depId);
-              if (!dep) return null;
-              return (
-                <line
-                  key={`${dep.id}-${node.id}`}
-                  x1={dep.x + 10}
-                  y1={dep.y + 10}
-                  x2={node.x}
-                  y2={node.y + 10}
-                  stroke="#3a3a3a"
-                  strokeWidth={1}
-                  markerEnd="url(#arrow)"
-                />
-              );
-            })
-          )}
+      {/* Legend */}
+      <div className="flex flex-wrap gap-x-3 gap-y-1 mb-2">
+        {activeStatuses.map((s) => (
+          <div key={s} className="flex items-center gap-1">
+            <span
+              className="inline-block w-2 h-2 rounded-full"
+              style={{ backgroundColor: statusColor(s) }}
+            />
+            <span className="text-[9px] text-cam-text-muted capitalize">{statusLabel(s)}</span>
+          </div>
+        ))}
+      </div>
 
-          {/* Arrow marker */}
+      {/* Graph area */}
+      <div
+        ref={scrollRef}
+        className="overflow-auto modern-scrollbar rounded border border-cam-border/20 bg-cam-surface/40"
+        style={{ maxHeight: 360 }}
+      >
+        <svg
+          width={svgWidth}
+          height={svgHeight}
+          viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+          className="select-none"
+        >
+          {/* Defs: arrow markers */}
           <defs>
-            <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5"
-              markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="#3a3a3a" />
+            {/* Default (dim) arrow */}
+            <marker
+              id="dep-arrow"
+              viewBox="0 0 10 10"
+              refX="10"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a4a4a" />
+            </marker>
+            {/* Highlighted arrow */}
+            <marker
+              id="dep-arrow-hl"
+              viewBox="0 0 10 10"
+              refX="10"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="#60a5fa" />
             </marker>
           </defs>
 
-          {/* Nodes */}
-          {graphData.map((node) => {
-            const statusColor = node.status === 'completed'
-              ? '#22c55e'
-              : node.status === 'in_progress'
-                ? '#3b82f6'
-                : node.status === 'blocked'
-                  ? '#ef4444'
-                  : '#666';
+          {/* Edges (drawn first so they sit behind nodes) */}
+          {edges.map((e) => {
+            const from = nodeById.get(e.fromId);
+            const to = nodeById.get(e.toId);
+            if (!from || !to) return null;
+
+            const hl = isEdgeHighlighted(e);
+
+            // Start from the right-centre of the source node
+            const x1 = from.x + NODE_WIDTH;
+            const y1 = from.y + NODE_HEIGHT / 2;
+            // End at the left-centre of the target node
+            const x2 = to.x;
+            const y2 = to.y + NODE_HEIGHT / 2;
+
+            // Use a cubic bezier for a smooth curve
+            const dx = Math.abs(x2 - x1);
+            const cpOffset = Math.max(dx * 0.4, 30);
+
+            const path = `M ${x1} ${y1} C ${x1 + cpOffset} ${y1}, ${x2 - cpOffset} ${y2}, ${x2} ${y2}`;
 
             return (
-              <g key={node.id}>
+              <path
+                key={`${e.fromId}-${e.toId}`}
+                d={path}
+                fill="none"
+                stroke={hl ? '#60a5fa' : '#3a3a3a'}
+                strokeWidth={hl ? 1.5 : 1}
+                strokeDasharray={hl ? undefined : undefined}
+                markerEnd={hl ? 'url(#dep-arrow-hl)' : 'url(#dep-arrow)'}
+                opacity={hovered === null || hl ? 1 : 0.25}
+                className="transition-opacity duration-150"
+              />
+            );
+          })}
+
+          {/* Nodes */}
+          {nodes.map((node) => {
+            const color = statusColor(node.status);
+            const dimmed = hovered !== null && hovered !== node.id &&
+              !edges.some(
+                (e) =>
+                  (e.fromId === hovered && e.toId === node.id) ||
+                  (e.toId === hovered && e.fromId === node.id)
+              );
+
+            return (
+              <g
+                key={node.id}
+                onMouseEnter={() => setHovered(node.id)}
+                onMouseLeave={() => setHovered(null)}
+                style={{ cursor: 'default' }}
+                opacity={dimmed ? 0.35 : 1}
+                className="transition-opacity duration-150"
+              >
+                {/* Background rect */}
                 <rect
                   x={node.x}
                   y={node.y}
-                  width={80}
-                  height={20}
-                  rx={4}
+                  width={NODE_WIDTH}
+                  height={NODE_HEIGHT}
+                  rx={6}
                   fill="#191919"
-                  stroke={statusColor}
-                  strokeWidth={1}
+                  stroke={color}
+                  strokeWidth={hovered === node.id ? 1.5 : 1}
                 />
+                {/* Status dot */}
+                <circle
+                  cx={node.x + 12}
+                  cy={node.y + NODE_HEIGHT / 2}
+                  r={4}
+                  fill={color}
+                />
+                {/* Title (truncated) */}
                 <text
-                  x={node.x + 40}
-                  y={node.y + 13}
-                  textAnchor="middle"
-                  fill="#a1a1a1"
-                  fontSize={8}
-                  fontFamily="Inter, sans-serif"
+                  x={node.x + 22}
+                  y={node.y + 18}
+                  fill="#d4d4d4"
+                  fontSize={10}
+                  fontFamily="Inter, system-ui, sans-serif"
+                  fontWeight={500}
                 >
-                  {node.title}
+                  {node.title.length > 18 ? node.title.slice(0, 17) + '\u2026' : node.title}
+                </text>
+                {/* Status label */}
+                <text
+                  x={node.x + 22}
+                  y={node.y + 34}
+                  fill="#737373"
+                  fontSize={8}
+                  fontFamily="Inter, system-ui, sans-serif"
+                  style={{ textTransform: 'capitalize' }}
+                >
+                  {statusLabel(node.status)}
                 </text>
               </g>
             );
