@@ -2,11 +2,23 @@
   "hooks": {
     "PreToolUse": [
       {
+        "matcher": "Edit|Write",
+        "command": "sh .claude/hooks/block-secrets.sh"
+      },
+      {
+        "matcher": "Bash",
+        "command": "sh .claude/hooks/block-dangerous-commands.sh"
+      },
+      {
         "matcher": "*",
         "command": "cam-hook pre-tool-use"
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "sh .claude/hooks/auto-format.sh"
+      },
       {
         "matcher": "*",
         "command": "cam-hook post-tool-use"
