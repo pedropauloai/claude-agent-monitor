@@ -39,7 +39,7 @@ export function PixelSprintProgress() {
     <div className="p-4" style={{ borderBottom: '3px solid var(--pixel-border)' }}>
       <div className="flex items-center justify-between mb-3">
         <span className="pixel-text-xs" style={{ color: 'var(--pixel-gold)' }}>
-          \u{1F4D6} CHAPTER PROGRESS
+          \📖 CHAPTER PROGRESS
         </span>
         <span className="pixel-text-xs" style={{ color: 'var(--pixel-text-muted)' }}>
           {activeSprint.name}
@@ -77,10 +77,10 @@ export function PixelSprintProgress() {
       {/* Stats Breakdown */}
       <div className="space-y-1">
         {[
-          { label: 'VICTORIES', value: stats.completed, icon: '\u{1F3C6}', color: 'var(--pixel-green)', barClass: 'pixel-bar-green' },
+          { label: 'VICTORIES', value: stats.completed, icon: '\🏆', color: 'var(--pixel-green)', barClass: 'pixel-bar-green' },
           { label: 'IN BATTLE', value: stats.inProgress, icon: '\u2694', color: 'var(--pixel-cyan)', barClass: 'pixel-bar-purple' },
           { label: 'WAITING', value: stats.pending, icon: '\u231B', color: 'var(--pixel-orange)', barClass: 'pixel-bar-xp' },
-          { label: 'SEALED', value: stats.blocked, icon: '\u{1F512}', color: 'var(--pixel-error)', barClass: 'pixel-bar-hp' },
+          { label: 'SEALED', value: stats.blocked, icon: '\🔒', color: 'var(--pixel-error)', barClass: 'pixel-bar-hp' },
         ].map((item) => (
           <div key={item.label} className="flex items-center gap-2">
             <span className="pixel-text-xs" style={{ width: '14px' }}>{item.icon}</span>

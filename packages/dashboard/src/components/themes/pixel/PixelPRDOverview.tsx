@@ -47,7 +47,7 @@ export function PixelPRDOverview() {
     return (
       <div className="h-full flex items-center justify-center p-4">
         <div className="text-center">
-          <span className="pixel-text-xl">\u{1F4D6}</span>
+          <span className="pixel-text-xl">\📖</span>
           <p className="pixel-text-xs mt-2" style={{ color: 'var(--pixel-text-muted)' }}>
             QUEST JOURNAL
           </p>
@@ -63,7 +63,7 @@ export function PixelPRDOverview() {
     <div className="p-3">
       <div className="flex items-center justify-between mb-2">
         <span className="pixel-text-xs" style={{ color: 'var(--pixel-gold)' }}>
-          \u{1F4D6} QUEST JOURNAL
+          \📖 QUEST JOURNAL
         </span>
         <span className="pixel-text-xs" style={{ color: 'var(--pixel-text-muted)' }}>
           {activeProject?.name}
@@ -132,7 +132,7 @@ export function PixelPRDOverview() {
                   <span style={{ color: 'var(--pixel-green)' }}>{section.inProgress}\u2694</span>
                 )}
                 {section.blocked > 0 && (
-                  <span style={{ color: 'var(--pixel-error)' }}>{section.blocked}\u{1F512}</span>
+                  <span style={{ color: 'var(--pixel-error)' }}>{section.blocked}\🔒</span>
                 )}
               </div>
 

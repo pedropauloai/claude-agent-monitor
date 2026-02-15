@@ -23,13 +23,13 @@ const CATEGORY_COLORS: Record<string, string> = {
 /** Pixel sprite icons for categories */
 const CATEGORY_SPRITES: Record<string, string> = {
   tool_call: '\u2694',
-  file_change: '\u{1F4E6}',
-  command: '\u{1F4BB}',
-  message: '\u{1F4AC}',
-  lifecycle: '\u{1F504}',
+  file_change: '\📦',
+  command: '\💻',
+  message: '\💬',
+  lifecycle: '\🔄',
   error: '\u2620',
-  compact: '\u{1F4E6}',
-  notification: '\u{1F514}',
+  compact: '\📦',
+  notification: '\🔔',
 };
 
 function getCatColor(category: EventCategory): string {
@@ -95,7 +95,7 @@ export function PixelTimeline() {
         style={{ borderTop: '3px solid var(--pixel-border)', background: 'var(--pixel-bg-dark)' }}
       >
         <div className="flex flex-col items-center gap-1">
-          <span className="pixel-text-base pixel-pulse">\u{1F3AE}</span>
+          <span className="pixel-text-base pixel-pulse">\🎮</span>
           <span className="pixel-text-xs" style={{ color: 'var(--pixel-text-muted)' }}>
             LOADING STAGE...
           </span>
@@ -115,7 +115,7 @@ export function PixelTimeline() {
         style={{ borderBottom: '2px solid var(--pixel-border)' }}
       >
         <span className="pixel-text-xs" style={{ color: 'var(--pixel-gold)' }}>
-          \u{1F3AE} STAGE PROGRESS
+          \🎮 STAGE PROGRESS
         </span>
         <span className="pixel-text-xs" style={{ color: 'var(--pixel-text-dim)' }}>
           {sortedEvents.length} EVENT{sortedEvents.length !== 1 ? 'S' : ''}

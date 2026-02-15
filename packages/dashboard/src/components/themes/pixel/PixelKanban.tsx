@@ -6,12 +6,12 @@ import type { PRDTask, PRDTaskStatus } from '@cam/shared';
 
 /** RPG quest status labels */
 const QUEST_STATUS: Record<string, { label: string; icon: string; color: string }> = {
-  backlog: { label: 'RUMORS', icon: '\u{1F4AC}', color: 'var(--pixel-text-dim)' },
-  planned: { label: 'ACCEPTED', icon: '\u{1F4DC}', color: 'var(--pixel-blue)' },
+  backlog: { label: 'RUMORS', icon: '\💬', color: 'var(--pixel-text-dim)' },
+  planned: { label: 'ACCEPTED', icon: '\📜', color: 'var(--pixel-blue)' },
   in_progress: { label: 'ACTIVE', icon: '\u2694', color: 'var(--pixel-green)' },
-  in_review: { label: 'REPORTING', icon: '\u{1F50D}', color: 'var(--pixel-purple)' },
-  completed: { label: 'COMPLETE!', icon: '\u{1F3C6}', color: 'var(--pixel-gold)' },
-  blocked: { label: 'SEALED', icon: '\u{1F512}', color: 'var(--pixel-error)' },
+  in_review: { label: 'REPORTING', icon: '\🔍', color: 'var(--pixel-purple)' },
+  completed: { label: 'COMPLETE!', icon: '\🏆', color: 'var(--pixel-gold)' },
+  blocked: { label: 'SEALED', icon: '\🔒', color: 'var(--pixel-error)' },
 };
 
 /** Priority to RPG difficulty */
@@ -39,7 +39,7 @@ export function PixelKanban() {
   if (tasks.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center p-8">
-        <div className="pixel-text-2xl mb-4">\u{1F4DC}</div>
+        <div className="pixel-text-2xl mb-4">\📜</div>
         <p className="pixel-text-sm" style={{ color: 'var(--pixel-text-muted)' }}>
           QUEST BOARD EMPTY
         </p>
@@ -179,7 +179,7 @@ function QuestCard({ task }: { task: PRDTask }) {
       {/* Blocked indicator */}
       {task.blockedBy.length > 0 && (
         <div className="mt-1 pixel-text-xs pixel-shake" style={{ color: 'var(--pixel-error)' }}>
-          \u{1F512} SEALED BY {task.blockedBy.length} QUEST{task.blockedBy.length > 1 ? 'S' : ''}
+          \🔒 SEALED BY {task.blockedBy.length} QUEST{task.blockedBy.length > 1 ? 'S' : ''}
         </div>
       )}
     </div>

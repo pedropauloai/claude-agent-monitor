@@ -6,8 +6,8 @@ import * as api from '../../../lib/api';
 
 const ITEM_TYPES: Record<string, { icon: string; label: string; rarity: string; color: string }> = {
   created: { icon: '\u2728', label: 'NEW', rarity: 'LEGENDARY', color: 'var(--pixel-gold)' },
-  modified: { icon: '\u{1F52E}', label: 'MOD', rarity: 'RARE', color: 'var(--pixel-purple)' },
-  read: { icon: '\u{1F4DC}', label: 'READ', rarity: 'COMMON', color: 'var(--pixel-cyan)' },
+  modified: { icon: '\🔮', label: 'MOD', rarity: 'RARE', color: 'var(--pixel-purple)' },
+  read: { icon: '\📜', label: 'READ', rarity: 'COMMON', color: 'var(--pixel-cyan)' },
 };
 
 export function PixelFileWatcher() {
@@ -44,24 +44,24 @@ export function PixelFileWatcher() {
         style={{ borderBottom: '2px solid var(--pixel-border)' }}
       >
         <span className="pixel-text-sm" style={{ color: 'var(--pixel-gold)' }}>
-          \u{1F4E6} INVENTORY
+          \📦 INVENTORY
         </span>
         <div className="flex items-center gap-2">
           <span className="pixel-text-xs" style={{ color: 'var(--pixel-gold)' }}>
             {created.length}\u2728
           </span>
           <span className="pixel-text-xs" style={{ color: 'var(--pixel-purple)' }}>
-            {modified.length}\u{1F52E}
+            {modified.length}\🔮
           </span>
           <span className="pixel-text-xs" style={{ color: 'var(--pixel-cyan)' }}>
-            {read.length}\u{1F4DC}
+            {read.length}\📜
           </span>
         </div>
       </div>
 
       {files.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className="pixel-text-xl mb-3">\u{1F4E6}</div>
+          <div className="pixel-text-xl mb-3">\📦</div>
           <p className="pixel-text-sm" style={{ color: 'var(--pixel-text-muted)' }}>
             INVENTORY EMPTY
           </p>

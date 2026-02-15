@@ -12,10 +12,10 @@ import {
 type TabId = 'activity' | 'files' | 'errors' | 'messages';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'activity', label: 'LOG', icon: '\u{1F4DC}' },
-  { id: 'files', label: 'LOOT', icon: '\u{1F4E6}' },
+  { id: 'activity', label: 'LOG', icon: '\📜' },
+  { id: 'files', label: 'LOOT', icon: '\📦' },
   { id: 'errors', label: 'CURSES', icon: '\u2620' },
-  { id: 'messages', label: 'CHAT', icon: '\u{1F4AC}' },
+  { id: 'messages', label: 'CHAT', icon: '\💬' },
 ];
 
 export function PixelAgentDetail() {
@@ -209,7 +209,7 @@ export function PixelAgentDetail() {
                   className="flex items-center gap-2 px-2 py-1.5"
                   style={{ border: '1px solid var(--pixel-border)' }}
                 >
-                  <span className="pixel-text-xs">\u{1F4E6}</span>
+                  <span className="pixel-text-xs">\📦</span>
                   <span className="pixel-text-xs truncate" style={{ color: 'var(--pixel-text)' }}>
                     {truncatePath(filePath, 28)}
                   </span>
@@ -266,7 +266,7 @@ export function PixelAgentDetail() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="pixel-text-xs" style={{ color: 'var(--pixel-purple)' }}>
-                      \u{1F4AC} TELEPATHY
+                      \💬 TELEPATHY
                     </span>
                     <span className="pixel-text-xs" style={{ color: 'var(--pixel-text-dim)' }}>
                       {formatTimestamp(event.timestamp)}

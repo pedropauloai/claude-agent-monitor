@@ -185,7 +185,7 @@ export function PixelDependencyGraph() {
       <div className="p-4" style={{ borderBottom: '3px solid var(--pixel-border)' }}>
         <div className="flex items-center justify-between mb-2">
           <span className="pixel-text-xs" style={{ color: 'var(--pixel-gold)' }}>
-            \u{1F332} SKILL TREE
+            \🌲 SKILL TREE
           </span>
         </div>
         <div className="h-24 flex items-center justify-center">
@@ -204,7 +204,7 @@ export function PixelDependencyGraph() {
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <span className="pixel-text-xs" style={{ color: 'var(--pixel-gold)' }}>
-          \u{1F332} SKILL TREE
+          \🌲 SKILL TREE
         </span>
         <span className="pixel-text-xs" style={{ color: 'var(--pixel-text-dim)' }}>
           {nodes.length} SKILLS \u00B7 {edges.length} LINKS
