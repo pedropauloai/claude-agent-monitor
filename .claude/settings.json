@@ -11,7 +11,7 @@
       },
       {
         "matcher": "*",
-        "command": "cam-hook pre-tool-use"
+        "command": "node packages/hook/dist/index.js pre-tool-use"
       }
     ],
     "PostToolUse": [
@@ -21,37 +21,37 @@
       },
       {
         "matcher": "*",
-        "command": "cam-hook post-tool-use"
+        "command": "node packages/hook/dist/index.js post-tool-use"
       }
     ],
     "Notification": [
       {
         "matcher": "*",
-        "command": "cam-hook notification"
+        "command": "node packages/hook/dist/index.js notification"
       }
     ],
     "Stop": [
       {
         "matcher": "*",
-        "command": "cam-hook stop"
+        "command": "node packages/hook/dist/index.js stop"
       }
     ],
     "SubagentStop": [
       {
         "matcher": "*",
-        "command": "cam-hook subagent-stop"
+        "command": "node packages/hook/dist/index.js subagent-stop"
       }
     ],
     "PreCompact": [
       {
         "matcher": "*",
-        "command": "cam-hook pre-compact"
+        "command": "node packages/hook/dist/index.js pre-compact"
       }
     ],
     "PostCompact": [
       {
         "matcher": "*",
-        "command": "cam-hook post-compact"
+        "command": "node packages/hook/dist/index.js post-compact"
       }
     ]
   }
