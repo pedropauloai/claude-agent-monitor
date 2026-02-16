@@ -3,55 +3,91 @@
     "PreToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "sh .claude/hooks/block-secrets.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/block-secrets.sh"
+          }
+        ]
       },
       {
         "matcher": "Bash",
-        "command": "sh .claude/hooks/block-dangerous-commands.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/block-dangerous-commands.sh"
+          }
+        ]
       },
       {
         "matcher": "*",
-        "command": "node packages/hook/dist/index.js pre-tool-use"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node packages/hook/dist/index.js pre-tool-use"
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write",
-        "command": "sh .claude/hooks/auto-format.sh"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh .claude/hooks/auto-format.sh"
+          }
+        ]
       },
       {
         "matcher": "*",
-        "command": "node packages/hook/dist/index.js post-tool-use"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node packages/hook/dist/index.js post-tool-use"
+          }
+        ]
       }
     ],
     "Notification": [
       {
         "matcher": "*",
-        "command": "node packages/hook/dist/index.js notification"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node packages/hook/dist/index.js notification"
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "matcher": "*",
-        "command": "node packages/hook/dist/index.js stop"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node packages/hook/dist/index.js stop"
+          }
+        ]
       }
     ],
     "SubagentStop": [
       {
-        "matcher": "*",
-        "command": "node packages/hook/dist/index.js subagent-stop"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node packages/hook/dist/index.js subagent-stop"
+          }
+        ]
       }
     ],
     "PreCompact": [
       {
-        "matcher": "*",
-        "command": "node packages/hook/dist/index.js pre-compact"
-      }
-    ],
-    "PostCompact": [
-      {
-        "matcher": "*",
-        "command": "node packages/hook/dist/index.js post-compact"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node packages/hook/dist/index.js pre-compact"
+          }
+        ]
       }
     ]
   }

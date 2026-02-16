@@ -1,6 +1,12 @@
-export interface HookEntry {
-  matcher: string;
+export interface HookHandler {
+  type: 'command';
   command: string;
+  timeout?: number;
+}
+
+export interface HookEntry {
+  matcher?: string;
+  hooks: HookHandler[];
 }
 
 export interface HooksConfig {
@@ -10,7 +16,6 @@ export interface HooksConfig {
   Stop: HookEntry[];
   SubagentStop: HookEntry[];
   PreCompact: HookEntry[];
-  PostCompact: HookEntry[];
 }
 
 const CAM_HOOK_MARKER = 'cam-hook';
@@ -20,43 +25,34 @@ export function generateHooksConfig(): HooksConfig {
     PreToolUse: [
       {
         matcher: '*',
-        command: 'cam-hook pre-tool-use',
+        hooks: [{ type: 'command', command: 'cam-hook pre-tool-use' }],
       },
     ],
     PostToolUse: [
       {
         matcher: '*',
-        command: 'cam-hook post-tool-use',
+        hooks: [{ type: 'command', command: 'cam-hook post-tool-use' }],
       },
     ],
     Notification: [
       {
         matcher: '*',
-        command: 'cam-hook notification',
+        hooks: [{ type: 'command', command: 'cam-hook notification' }],
       },
     ],
     Stop: [
       {
-        matcher: '*',
-        command: 'cam-hook stop',
+        hooks: [{ type: 'command', command: 'cam-hook stop' }],
       },
     ],
     SubagentStop: [
       {
-        matcher: '*',
-        command: 'cam-hook subagent-stop',
+        hooks: [{ type: 'command', command: 'cam-hook subagent-stop' }],
       },
     ],
     PreCompact: [
       {
-        matcher: '*',
-        command: 'cam-hook pre-compact',
-      },
-    ],
-    PostCompact: [
-      {
-        matcher: '*',
-        command: 'cam-hook post-compact',
+        hooks: [{ type: 'command', command: 'cam-hook pre-compact' }],
       },
     ],
   };
@@ -81,9 +77,9 @@ export function mergeHooks(
     merged[hookType] = [...nonCamEntries, ...entries];
   }
 
-  // Preserve hook types not managed by CAM
+  // Preserve hook types not managed by CAM (and remove legacy PostCompact)
   for (const [hookType, entries] of Object.entries(existingHooks)) {
-    if (!(hookType in camHooks)) {
+    if (!(hookType in camHooks) && hookType !== 'PostCompact') {
       merged[hookType] = entries;
     }
   }
@@ -118,7 +114,18 @@ export function removeCamHooks(
 }
 
 export function isCamHook(entry: HookEntry): boolean {
-  return entry.command.includes(CAM_HOOK_MARKER);
+  // Check new format: hooks array with command containing marker
+  if (entry.hooks && Array.isArray(entry.hooks)) {
+    return entry.hooks.some(
+      (h) => h.type === 'command' && h.command.includes(CAM_HOOK_MARKER),
+    );
+  }
+  // Legacy format fallback: direct command field
+  const legacy = entry as unknown as Record<string, string>;
+  if (typeof legacy['command'] === 'string') {
+    return legacy['command'].includes(CAM_HOOK_MARKER);
+  }
+  return false;
 }
 
 export function listConfiguredCamHooks(
@@ -130,7 +137,13 @@ export function listConfiguredCamHooks(
   for (const [hookType, entries] of Object.entries(hooks)) {
     for (const entry of entries) {
       if (isCamHook(entry)) {
-        result.push({ hookType, command: entry.command });
+        // Extract command from hooks array
+        const cmd = entry.hooks?.find(
+          (h) => h.type === 'command' && h.command.includes(CAM_HOOK_MARKER),
+        );
+        if (cmd) {
+          result.push({ hookType, command: cmd.command });
+        }
       }
     }
   }
@@ -145,5 +158,4 @@ export const HOOK_TYPE_DESCRIPTIONS: Record<string, string> = {
   Stop: 'When the main agent stops',
   SubagentStop: 'When a sub-agent (teammate) stops',
   PreCompact: 'Before context compaction',
-  PostCompact: 'After context compaction',
 };
