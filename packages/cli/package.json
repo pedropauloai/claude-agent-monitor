@@ -15,14 +15,18 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build"
   },
   "dependencies": {
     "@cam/shared": "workspace:*",
+    "@cam/server": "workspace:*",
+    "@cam/hook": "workspace:*",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "ora": "^8.1.0"
@@ -30,5 +34,17 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/claude-agent-monitor.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/user/claude-agent-monitor",
+  "bugs": "https://github.com/user/claude-agent-monitor/issues",
+  "keywords": ["claude", "agent", "monitor", "observability", "claude-code"],
+  "author": "CAM Contributors",
+  "publishConfig": {
+    "access": "public"
   }
 }

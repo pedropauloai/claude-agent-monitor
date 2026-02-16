@@ -96,3 +96,34 @@ registerTheme('terminal', {
   Burndown: TerminalBurndown,
   ProjectSelector: TerminalProjectSelector,
 });
+
+// -- Pixel Art theme --
+import { PixelShell } from '../components/themes/pixel/PixelShell';
+import { PixelAgentPanel } from '../components/themes/pixel/PixelAgentPanel';
+import { PixelActivityFeed } from '../components/themes/pixel/PixelActivityFeed';
+import { PixelFileWatcher } from '../components/themes/pixel/PixelFileWatcher';
+import { PixelStatsBar } from '../components/themes/pixel/PixelStatsBar';
+import { PixelAgentDetail } from '../components/themes/pixel/PixelAgentDetail';
+import { PixelTimeline } from '../components/themes/pixel/PixelTimeline';
+import { PixelKanban } from '../components/themes/pixel/PixelKanban';
+import { PixelSprintProgress } from '../components/themes/pixel/PixelSprintProgress';
+import { PixelPRDOverview } from '../components/themes/pixel/PixelPRDOverview';
+import { PixelDependencyGraph } from '../components/themes/pixel/PixelDependencyGraph';
+import { PixelBurndown } from '../components/themes/pixel/PixelBurndown';
+import { PixelProjectSelector } from '../components/themes/pixel/PixelProjectSelector';
+
+registerTheme('pixel', {
+  Shell: PixelShell,
+  AgentPanel: PixelAgentPanel,
+  ActivityFeed: PixelActivityFeed,
+  FileWatcher: PixelFileWatcher,
+  StatsBar: PixelStatsBar,
+  AgentDetail: PixelAgentDetail,
+  Timeline: PixelTimeline,
+  Kanban: PixelKanban,
+  SprintProgress: PixelSprintProgress,
+  PRDOverview: PixelPRDOverview,
+  DependencyGraph: PixelDependencyGraph,
+  Burndown: PixelBurndown,
+  ProjectSelector: PixelProjectSelector,
+});

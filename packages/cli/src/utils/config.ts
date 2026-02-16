@@ -6,6 +6,7 @@ export interface CamConfig {
   serverPort: number;
   dashboardPort: number;
   theme: string;
+  activeProjectId?: string;
 }
 
 const CONFIG_FILE_NAME = 'cam.config.json';

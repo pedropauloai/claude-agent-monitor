@@ -32,12 +32,13 @@ Entregue um PRD. Abra o dashboard. Deixe os agentes trabalharem. Assista tudo ac
 
 ### Diferencial
 - **Unico Mission Control visual** para Claude Code agents (nenhum existe hoje)
+- **Agent Map interativo**: visualizacao pixel art em tempo real onde agentes sao personagens que se movem entre zonas, interagem e executam acoes - inspirado no OPES Big Brother
 - **PRD-driven**: importa um PRD, o dashboard tracka progresso automaticamente conforme agentes completam tasks
-- **3 temas visuais** distintos (Pixel Art, Modern, Terminal) - nao apenas skins, mas experiencias diferentes
 - **Zero config**: um comando para instalar, hooks auto-configurados
 - **Auto-updating**: tasks se movem sozinhas no Kanban conforme agentes trabalham
-- **Open-source**: comunidade pode criar temas customizados
+- **Open-source**: comunidade pode criar temas customizados (Open Core model)
 - **Universal**: funciona em qualquer projeto - basta `cam init` + entregar o PRD
+- **Temas premium** (futuro): Terminal e Pixel Art como experiencias alternativas completas
 
 ---
 
@@ -1443,6 +1444,90 @@ Metricas agregadas da sessao.
 - Modern: Command palette estilo Raycast/Spotlight com search
 - Terminal: `:project list` e `:project switch <name>`
 
+### 8.13 AgentMap (CORE FEATURE)
+
+**Descricao**: Visualizacao interativa pixel art em tempo real onde agentes Claude Code sao representados como personagens que se movem entre zonas de atividade, interagem entre si e executam acoes visivelmente. Esta e a **feature central do produto** - o que diferencia o CAM de qualquer outra ferramenta de monitoring. Inspirado no OPES Big Brother.
+
+> **IMPORTANTE**: O Agent Map NAO e um tema. E um componente core que vive dentro do tema Modern (e qualquer tema). E a visualizacao principal que o usuario ve ao abrir o dashboard.
+
+**Conceito Visual**:
+```
++------------------------------------------------------------------+
+|                        AGENT MAP                                  |
+|                                                                   |
+|  +----------+     +----------+     +----------+     +----------+  |
+|  | CODE     |     | COMMAND  |     | COMMS    |     | RESEARCH |  |
+|  | ZONE     |     | ZONE     |     | HUB      |     | LAB      |  |
+|  |          |     |          |     |          |     |          |  |
+|  |  🧙 Lead |---->|  🗡️ Eng  |     | 🏹 Test  |<--->| 🛡️ Res  |  |
+|  | editing  |     | running  |     | sending  |     | reading  |  |
+|  | auth.ts  |     | tests    |     | message  |     | docs     |  |
+|  +----------+     +----------+     +----------+     +----------+  |
+|                                                                   |
+|  +----------+     +----------+                                    |
+|  | REST     |     | DONE     |    💬 "Auth module done!"          |
+|  | AREA     |     | ZONE     |    Lead --> Eng (balao de fala)    |
+|  |          |     |          |                                    |
+|  | 😴 Idle  |     | 🎉 Fin  |                                    |
+|  | zzZ...   |     | quest!   |                                    |
+|  +----------+     +----------+                                    |
++------------------------------------------------------------------+
+```
+
+**Zonas de Atividade (mapeadas automaticamente por tool usage)**:
+
+| Zona | Tools que ativam | Visual | Descricao |
+|------|-----------------|--------|-----------|
+| **Code Zone** | Edit, Write, Read, Glob, Grep | Sala com tela de codigo | Agente lendo/editando arquivos |
+| **Command Zone** | Bash | Sala com terminal | Agente executando comandos |
+| **Comms Hub** | SendMessage, Task tools | Sala com baloes | Agente se comunicando com outros |
+| **Research Lab** | WebSearch, WebFetch | Sala com livros/globo | Agente pesquisando na web |
+| **Task Board** | TaskCreate, TaskUpdate, TaskList | Sala com quadro | Agente gerenciando tasks |
+| **Rest Area** | (idle > 30s) | Sala com cama/fogueira | Agente descansando |
+| **Done Zone** | (completed/shutdown) | Sala com trofeu | Agente que terminou |
+
+**Sprites dos Agentes**:
+- Renderizados em CSS pixel art (box-shadow sprites) ou Canvas 2D
+- Cada agente tem cor unica baseada no nome (hash -> paleta)
+- Tamanho: 24x24 ou 32x32 pixels
+- Estados de animacao:
+  | Estado | Animacao |
+  |--------|----------|
+  | `idle` | Personagem parado, piscando lentamente |
+  | `working` | Martelando/digitando, particulas de codigo saindo |
+  | `moving` | Caminhando (transicao entre zonas) |
+  | `talking` | Balao de dialogo aparece com preview da mensagem |
+  | `error` | Exclamacao vermelha, personagem tremendo |
+  | `completed` | Comemoracap, confete pixelado |
+  | `shutdown` | Personagem deita e dorme (zzZ) |
+
+**Interacoes Visuais Entre Agentes**:
+- Quando Agent A envia SendMessage para Agent B: linha tracejada conecta os dois + balao de fala
+- Quando Agent A spawna Agent B (Task tool): Agent B aparece com animacao de "spawn" na zona de origem
+- Quando Agent A atribui task a Agent B (TaskUpdate): seta animada de A para B
+- Quando Team e deletado: agentes na Done Zone fazem animacao de "wave goodbye"
+
+**Dados Necessarios (ja capturados pelos hooks existentes)**:
+- `agent_id` + `status` -> qual agente, em qual estado
+- `tool` (de events) -> determina a zona atual
+- `SendMessage` events -> linhas de interacao entre agentes
+- `Task` tool calls -> spawn/shutdown de agentes
+- `TaskCreate`/`TaskUpdate` -> movimentacao de task cards
+
+**Implementacao Tecnica**:
+- **Rendering**: HTML5 Canvas 2D ou CSS Grid + CSS animations
+- **State machine**: Cada agente tem estado (zona, animacao, posicao)
+- **Transicoes**: CSS transitions suaves ao mudar de zona (500ms ease)
+- **SSE integration**: Novos eventos atualizam estado do agente -> mapa reage
+- **Responsivo**: Zonas reorganizam em grid responsivo
+- **Performance**: RequestAnimationFrame para animacoes, max 60fps
+- **Interatividade**: Click em agente abre AgentDetail panel
+
+**API necessaria (ja existente)**:
+- `GET /api/sessions/:id/agents` - lista agentes e status
+- `GET /api/stream` (SSE) - eventos em tempo real
+- `GET /api/sessions/:id/events?agent_id=X` - historico do agente
+
 ---
 
 ## 9. Setup / Install Flow
@@ -1665,47 +1750,45 @@ cam progress --full
 
 ### MVP (v1.0) - "Mission Control"
 
-**Escopo**: Server local + Dashboard web + 2 Pilares + 3 temas
+**Escopo**: Server local + Dashboard web + 2 Pilares + Agent Map + 3 temas
 
-**Sprint 1 - Core Infrastructure**:
-- [ ] Monorepo setup (pnpm workspaces)
-- [ ] `@cam/shared` - tipos e schemas compartilhados
-- [ ] `@cam/server` - Node.js + SQLite + REST API + SSE
-- [ ] `@cam/hook` - binario ultra-leve para hooks
-- [ ] `@cam/cli` - comandos basicos (init, start, status)
+**Sprint 1 - Core Infrastructure** (CONCLUIDO):
+- [x] Monorepo setup (pnpm workspaces)
+- [x] `@cam/shared` - tipos e schemas compartilhados
+- [x] `@cam/server` - Node.js + SQLite + REST API + SSE
+- [x] `@cam/hook` - binario ultra-leve para hooks
+- [x] `@cam/cli` - comandos basicos (init, start, status)
+- [x] Dashboard React + Vite + Zustand
+- [x] AgentPanel, ActivityFeed, FileWatcher, StatsBar, AgentDetail, SessionTimeline
+- [x] Tema Modern (default)
+- [x] PRD parser (structured mode)
+- [x] Correlation Engine (auto-matching events -> tasks)
+- [x] Project/Sprint data model + API endpoints
+- [x] KanbanBoard (auto-updating)
+- [x] SprintProgress, BurndownChart, DependencyGraph, PRDOverview, ProjectSelector
+- [x] Tema Terminal (keyboard-driven, ASCII)
+- [x] Tema Pixel Art (RPG aesthetic)
+- [x] Theme switcher component
 
-**Sprint 2 - Pilar 1 (Agent Monitor)**:
-- [ ] Dashboard React + Vite + Zustand
-- [ ] AgentPanel (lista de agentes com status)
-- [ ] ActivityFeed (feed em tempo real)
-- [ ] FileWatcher (arvore de arquivos)
-- [ ] StatsBar (metricas agregadas)
-- [ ] AgentDetail (detalhes do agente)
-- [ ] SessionTimeline (Gantt dos agentes)
-- [ ] Tema Modern (default, implementado primeiro)
-
-**Sprint 3 - Pilar 2 (PRD Tracker)**:
-- [ ] PRD parser (structured mode)
-- [ ] Correlation Engine (auto-matching events -> tasks)
-- [ ] Project/Sprint data model + API endpoints
-- [ ] KanbanBoard (auto-updating)
-- [ ] SprintProgress (barra + stats)
-- [ ] BurndownChart
-- [ ] DependencyGraph
-- [ ] PRDOverview (documento colorido)
-- [ ] ProjectSelector (switcher de modos)
-
-**Sprint 4 - Temas Adicionais**:
-- [ ] Tema Terminal (keyboard-driven, ASCII)
-- [ ] Tema Pixel Art (sprites, animacoes, RPG aesthetic)
-- [ ] Theme switcher component
-
-**Sprint 5 - Polish & Launch**:
+**Sprint 1 - Remaining** (3 tasks):
 - [ ] CLI completo (project, sprint, tasks, progress commands)
-- [ ] PRD parser AI-assisted mode
 - [ ] npm packaging + instalacao global
 - [ ] README + docs + examples
-- [ ] GitHub repo + CI/CD
+
+**Sprint 2 - Agent Map** (CORE FEATURE - PROXIMO):
+- [ ] Arquitetura do componente AgentMap (Canvas vs CSS, state machine)
+- [ ] Sprites pixel art dos agentes (CSS box-shadow ou Canvas)
+- [ ] Mapa com zonas de atividade (Code, Command, Comms, Research, Task Board, Rest, Done)
+- [ ] Sistema de posicionamento (tool usage -> zona do agente)
+- [ ] Animacoes de estado (idle, working, moving, talking, error, completed)
+- [ ] Interacoes visuais (baloes de fala, linhas de comunicacao, spawn animations)
+- [ ] Integracao SSE (eventos em tempo real -> atualizacao do mapa)
+- [ ] Integracao no layout Modern (componente central do dashboard)
+- [ ] Click em agente -> abre AgentDetail
+- [ ] Responsividade e performance (60fps)
+
+**Sprint 1 - Deferred to v1.1**:
+- PRD parser AI-assisted mode (structured mode funciona bem)
 
 ### v1.1 - "Intelligence"
 

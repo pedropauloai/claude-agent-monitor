@@ -10,6 +10,12 @@ importers:
 
   packages/cli:
     dependencies:
+      '@cam/hook':
+        specifier: workspace:*
+        version: link:../hook
+      '@cam/server':
+        specifier: workspace:*
+        version: link:../server
       '@cam/shared':
         specifier: workspace:*
         version: link:../shared

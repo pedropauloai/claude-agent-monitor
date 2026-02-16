@@ -12,12 +12,14 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": ["dist"],
   "scripts": {
     "build": "tsc && node -e \"const fs=require('fs');const p=require('path');fs.mkdirSync(p.join('dist','db'),{recursive:true});fs.copyFileSync(p.join('src','db','schema.sql'),p.join('dist','db','schema.sql'));\"",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build"
   },
   "dependencies": {
     "@cam/shared": "workspace:*",
@@ -34,5 +36,17 @@
     "@types/uuid": "^10.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/claude-agent-monitor.git",
+    "directory": "packages/server"
+  },
+  "homepage": "https://github.com/user/claude-agent-monitor",
+  "bugs": "https://github.com/user/claude-agent-monitor/issues",
+  "keywords": ["claude", "agent", "monitor", "observability", "claude-code"],
+  "author": "CAM Contributors",
+  "publishConfig": {
+    "access": "public"
   }
 }

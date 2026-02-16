@@ -7,6 +7,10 @@ import { statusCommand } from './commands/status.js';
 import { sessionsCommand } from './commands/sessions.js';
 import { hooksCommand } from './commands/hooks.js';
 import { themeCommand } from './commands/theme.js';
+import { projectCommand } from './commands/project.js';
+import { sprintCommand } from './commands/sprint.js';
+import { tasksCommand } from './commands/tasks.js';
+import { progressCommand } from './commands/progress.js';
 
 const program = new Command();
 
@@ -21,5 +25,9 @@ program.addCommand(statusCommand);
 program.addCommand(sessionsCommand);
 program.addCommand(hooksCommand);
 program.addCommand(themeCommand);
+program.addCommand(projectCommand);
+program.addCommand(sprintCommand);
+program.addCommand(tasksCommand);
+program.addCommand(progressCommand);
 
 program.parse();
