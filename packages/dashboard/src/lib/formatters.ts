@@ -151,3 +151,26 @@ export function generateIdenticon(seed: string): string {
   const hue = Math.abs(hash % 360);
   return `hsl(${hue}, 70%, 60%)`;
 }
+
+/**
+ * Extracts a short sprint label from a prdSection string.
+ *
+ * Examples:
+ * - "Sprint 1 - Core Infrastructure" -> "S1"
+ * - "Sprint 10 - Visual Polish"      -> "S10"
+ * - "v1.1 - Intelligence"            -> "v1.1"
+ * - null / undefined / ""            -> ""
+ */
+export function extractSprintLabel(prdSection: string | undefined | null): string {
+  if (!prdSection) return '';
+
+  // Match "Sprint <number>"
+  const sprintMatch = prdSection.match(/^Sprint\s+(\d+)/i);
+  if (sprintMatch) return `S${sprintMatch[1]}`;
+
+  // Match version-style labels like "v1.1 - ..."
+  const versionMatch = prdSection.match(/^(v[\d.]+)/i);
+  if (versionMatch) return versionMatch[1];
+
+  return '';
+}

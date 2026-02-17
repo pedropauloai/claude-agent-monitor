@@ -8,10 +8,23 @@ import {
   correlationAuditQueries,
   sessionProjectBindingQueries,
   agentTaskBindingQueries,
+  sprintQueries,
 } from '../db/queries.js';
 import { updateTask } from './project-manager.js';
 import { sseManager } from './sse-manager.js';
 import { combinedSimilarity, tokenSimilarity, tokenize } from './string-similarity.js';
+
+// ---------------------------------------------------------------------------
+// Backlog sprint protection
+// ---------------------------------------------------------------------------
+
+/** Check if a task belongs to a backlog sprint (order > 1). Backlog tasks
+ *  should never have their status changed automatically by the correlation engine. */
+function isBacklogSprintTask(task: PrdTaskRow): boolean {
+  if (!task.sprint_id) return false;
+  const sprint = sprintQueries.getById().get(task.sprint_id) as { order: number } | undefined;
+  return sprint !== undefined && sprint.order > 1;
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,6 +33,7 @@ import { combinedSimilarity, tokenSimilarity, tokenize } from './string-similari
 interface PrdTaskRow {
   id: string;
   project_id: string;
+  sprint_id: string | null;
   title: string;
   description: string;
   status: string;
@@ -1089,7 +1103,7 @@ function handleTaskUpdate(event: AgentEvent, input: Record<string, unknown>): vo
       updates['assignedAgent'] = owner;
     }
 
-    if (Object.keys(updates).length > 0) {
+    if (Object.keys(updates).length > 0 && !isBacklogSprintTask(matchedTask)) {
       updateTask(matchedTask.id, updates);
     }
 
@@ -1299,7 +1313,7 @@ function handleTaskList(event: AgentEvent): void {
         hasChanges = true;
       }
 
-      if (hasChanges) {
+      if (hasChanges && !isBacklogSprintTask(matchedPrdTask)) {
         updateTask(matchedPrdTask.id, updates);
 
         const activityType = updates['status'] === 'completed' ? 'task_completed'
@@ -1356,6 +1370,9 @@ function handleGeneralToolEvent(event: AgentEvent): void {
   // Skip if the task is blocked or would regress
   if (currentTasks.status === 'blocked') return;
   if (currentIdx >= newIdx) return;
+
+  // Skip backlog sprint tasks - they should not be auto-updated by correlation
+  if (isBacklogSprintTask(currentTasks)) return;
 
   // Apply the update via project-manager (handles sprint/project counts, SSE)
   const updates: Record<string, string | undefined> = {

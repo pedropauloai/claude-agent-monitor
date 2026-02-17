@@ -2,7 +2,7 @@ import { useProjectStore } from '../../../stores/project-store';
 import { KANBAN_COLUMNS } from '../../../stores/kanban-store';
 import { useTasks } from '../../../hooks/use-tasks';
 import { useResolveAgentName } from '../../../hooks/use-resolve-agent-name';
-import { getPriorityColor, generateIdenticon } from '../../../lib/formatters';
+import { getPriorityColor, generateIdenticon, extractSprintLabel } from '../../../lib/formatters';
 import type { PRDTask, PRDTaskStatus } from '@cam/shared';
 
 /** RPG quest status labels */
@@ -107,6 +107,7 @@ function QuestCard({ task }: { task: PRDTask }) {
   const agentColor = task.assignedAgent ? generateIdenticon(task.assignedAgent) : null;
   const agentDisplayName = task.assignedAgent ? resolveAgentName(task.assignedAgent) : null;
   const isCompleted = task.status === 'completed';
+  const sprintLabel = extractSprintLabel(task.prdSection);
 
   return (
     <div
@@ -117,11 +118,25 @@ function QuestCard({ task }: { task: PRDTask }) {
         opacity: isCompleted ? 0.85 : 1,
       }}
     >
-      {/* Difficulty + Complexity */}
+      {/* Difficulty + Complexity + Sprint */}
       <div className="flex items-center justify-between mb-1">
-        <span className="pixel-text-xs" style={{ color: difficulty.color }}>
-          [{difficulty.label}]
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="pixel-text-xs" style={{ color: difficulty.color }}>
+            [{difficulty.label}]
+          </span>
+          {sprintLabel && (
+            <span
+              className="pixel-text-xs px-1"
+              style={{
+                color: 'var(--pixel-gold)',
+                background: 'rgba(255, 215, 0, 0.1)',
+                border: '1px solid var(--pixel-gold)',
+              }}
+            >
+              {sprintLabel}
+            </span>
+          )}
+        </div>
         {task.complexity && (
           <span className="pixel-text-xs" style={{ color: 'var(--pixel-text-dim)' }}>
             C{task.complexity}

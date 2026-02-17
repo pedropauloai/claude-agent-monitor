@@ -165,8 +165,11 @@ function AgentCard({
           <div
             className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotColor(agent.status)}`}
           />
-          <span className="text-[11px] text-cam-text-muted truncate flex-1">
+          <span className="text-[11px] text-cam-text-muted truncate">
             {displayName}
+          </span>
+          <span className="text-[9px] px-1 py-0.5 rounded bg-cam-surface-3 text-cam-text-muted shrink-0">
+            {agent.type}
           </span>
           <span className="text-[9px] text-cam-text-muted shrink-0">
             {agent.toolCallCount}c
@@ -211,6 +214,9 @@ function AgentCard({
             />
             <span className="text-xs font-medium text-cam-text truncate">
               {displayName}
+            </span>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cam-surface-3 text-cam-text-muted shrink-0">
+              {agent.type}
             </span>
           </div>
 

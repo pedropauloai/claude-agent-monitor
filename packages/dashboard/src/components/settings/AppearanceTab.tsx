@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSettingsStore } from '../../stores/settings-store.js';
 import type { ThemeName, SpriteResolution } from '../../stores/settings-store.js';
+import { SpritePreview } from './SpritePreview.js';
 
 const THEME_OPTIONS: { value: ThemeName; label: string; description: string }[] = [
   { value: 'modern', label: 'Modern', description: 'Interface limpa e minimalista' },
@@ -196,6 +197,11 @@ export function AppearanceTab() {
               </div>
             </button>
           ))}
+        </div>
+
+        {/* Sprite Preview */}
+        <div className="mt-3">
+          <SpritePreview resolution={spriteResolution} />
         </div>
       </section>
     </div>

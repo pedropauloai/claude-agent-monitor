@@ -21,6 +21,10 @@ import {
   getProjectForSession,
   getSessionsForProject,
 } from "./project-router.js";
+import {
+  autoCompleteTasksForSession,
+  autoCompleteTasksForAgent,
+} from "./task-completion.js";
 
 /**
  * Track spawned subagents per session for SubagentStop correlation.
@@ -375,6 +379,13 @@ function persistEvent(event: AgentEvent, now: string): void {
     };
     sseManager.broadcast("agent_status", completedPayload, event.sessionId);
 
+    // Auto-complete tasks bound to this agent with high confidence
+    try {
+      autoCompleteTasksForAgent(event.agentId, event.sessionId);
+    } catch {
+      // Task completion errors should not break event processing
+    }
+
     // Cross-broadcast completed status to project peers
     const pidCompleted = getProjectForSession(event.sessionId);
     if (pidCompleted) {
@@ -405,6 +416,15 @@ function persistEvent(event: AgentEvent, now: string): void {
     }
   }
 
+  // Auto-complete tasks on SessionEnd
+  if (event.hookType === "SessionEnd") {
+    try {
+      autoCompleteTasksForSession(event.sessionId);
+    } catch {
+      // Task completion errors should not break event processing
+    }
+  }
+
   if (event.hookType === "SubagentStop") {
     // Correlate with spawned virtual agents (FIFO queue)
     const queue = spawnedSubagentQueue.get(event.sessionId);
@@ -419,6 +439,13 @@ function persistEvent(event: AgentEvent, now: string): void {
         status: "shutdown",
       };
       sseManager.broadcast("agent_status", shutdownPayload, event.sessionId);
+
+      // Auto-complete tasks bound to this subagent with high confidence
+      try {
+        autoCompleteTasksForAgent(subagentId, event.sessionId);
+      } catch {
+        // Task completion errors should not break event processing
+      }
 
       // Cross-broadcast shutdown status to project peers
       const pidShutdown = getProjectForSession(event.sessionId);

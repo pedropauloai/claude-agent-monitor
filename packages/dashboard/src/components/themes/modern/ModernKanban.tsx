@@ -7,6 +7,7 @@ import {
   getPriorityColor,
   getTaskStatusColor,
   generateIdenticon,
+  extractSprintLabel,
 } from '../../../lib/formatters';
 import type { PRDTask, PRDTaskStatus } from '@cam/shared';
 
@@ -105,13 +106,14 @@ function KanbanCard({ task }: { task: PRDTask }) {
   const priorityStyle = getPriorityColor(task.priority);
   const agentColor = task.assignedAgent ? generateIdenticon(task.assignedAgent) : null;
   const agentDisplayName = task.assignedAgent ? resolveAgentName(task.assignedAgent) : null;
+  const sprintLabel = extractSprintLabel(task.prdSection);
 
   return (
     <div
       className={`modern-card p-2.5 cursor-pointer group ${selectedTaskId === task.id ? 'ring-1 ring-cam-accent' : ''}`}
       onClick={() => selectTask(task.id)}
     >
-      {/* Priority + Complexity */}
+      {/* Priority + Complexity + Sprint */}
       <div className="flex items-center gap-1.5 mb-1.5">
         <span className={`text-[9px] px-1.5 py-0.5 rounded border font-medium ${priorityStyle}`}>
           {task.priority}
@@ -119,6 +121,11 @@ function KanbanCard({ task }: { task: PRDTask }) {
         {task.complexity && (
           <span className="text-[9px] px-1.5 py-0.5 rounded bg-cam-surface-3 text-cam-text-muted border border-cam-border/50">
             C{task.complexity}
+          </span>
+        )}
+        {sprintLabel && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-cam-accent/10 text-cam-accent font-mono">
+            {sprintLabel}
           </span>
         )}
       </div>

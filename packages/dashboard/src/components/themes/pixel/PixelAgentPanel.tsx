@@ -197,8 +197,11 @@ function CompactAgentCard({
     >
       <div className="flex items-center gap-2">
         <span className="pixel-text-xs">{icon}</span>
-        <span className="pixel-text-xs truncate flex-1" style={{ color: "var(--pixel-text-dim)" }}>
+        <span className="pixel-text-xs truncate" style={{ color: "var(--pixel-text-dim)" }}>
           {displayName}
+        </span>
+        <span className="pixel-text-xs shrink-0" style={{ color: "var(--pixel-gold, #d4a017)" }}>
+          {agent.type}
         </span>
         <span className="pixel-text-xs" style={{ color: status.color }}>
           {status.text}
@@ -247,6 +250,12 @@ function AgentCard({
           <div className="flex items-center gap-1">
             <span className="pixel-text-sm truncate" style={{ color: color }}>
               {displayName}
+            </span>
+            <span
+              className="pixel-text-xs"
+              style={{ color: "var(--pixel-gold, #d4a017)" }}
+            >
+              {agent.type}
             </span>
           </div>
           <div className="flex items-center gap-2">

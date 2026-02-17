@@ -2,6 +2,7 @@ import { useProjectStore } from '../../../stores/project-store';
 import { KANBAN_COLUMNS } from '../../../stores/kanban-store';
 import { useTasks } from '../../../hooks/use-tasks';
 import { useResolveAgentName } from '../../../hooks/use-resolve-agent-name';
+import { extractSprintLabel } from '../../../lib/formatters';
 import type { PRDTask, PRDTaskStatus } from '@cam/shared';
 
 const COLUMN_CHARS: Record<string, string> = {
@@ -99,19 +100,23 @@ function KanbanCard({ task }: { task: PRDTask }) {
   const { selectTask, selectedTaskId } = useProjectStore();
   const resolveAgentName = useResolveAgentName();
   const priChar = PRIORITY_CHARS[task.priority] || '   ';
+  const sprintLabel = extractSprintLabel(task.prdSection);
 
   return (
     <div
       className={`terminal-card p-1.5 text-[10px] cursor-pointer ${selectedTaskId === task.id ? 'border border-[#00ccff]' : ''}`}
       onClick={() => selectTask(task.id)}
     >
-      {/* Top row: priority + complexity */}
+      {/* Top row: priority + complexity + sprint */}
       <div className="flex items-center gap-1 mb-0.5">
         <span className={`${task.priority === 'critical' || task.priority === 'high' ? 'terminal-error' : 'terminal-dim'}`}>
           {priChar}
         </span>
         {task.complexity && (
           <span className="terminal-dim">C{task.complexity}</span>
+        )}
+        {sprintLabel && (
+          <span className="text-[#00ff00]">[{sprintLabel}]</span>
         )}
       </div>
 

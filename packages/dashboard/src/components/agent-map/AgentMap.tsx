@@ -49,6 +49,14 @@ export function AgentMap() {
     return map;
   }, [agents]);
 
+  const agentTypes = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const agent of agents) {
+      map.set(agent.id, agent.type);
+    }
+    return map;
+  }, [agents]);
+
   const hasHierarchy = useMemo(() => {
     for (const pos of positions.values()) {
       if (pos.parentAgentId) return true;
@@ -72,6 +80,7 @@ export function AgentMap() {
           positions={positions}
           agentNames={agentNames}
           agentColors={agentColors}
+          agentTypes={agentTypes}
           agentLastActivity={agentLastActivity}
           agentStatuses={agentStatuses}
           speechBubbles={speechBubbles}

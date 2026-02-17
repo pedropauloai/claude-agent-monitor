@@ -7,6 +7,7 @@ interface MissionFloorProps {
   positions: Map<string, AgentMapPosition>;
   agentNames: Map<string, string>;
   agentColors: Map<string, string>;
+  agentTypes: Map<string, string>;
   agentLastActivity: Map<string, string>;
   agentStatuses: Map<string, string>;
   speechBubbles: SpeechBubbleData[];
@@ -93,6 +94,7 @@ function AgentCardWithBubble({
   pos,
   agentNames,
   agentColors,
+  agentTypes,
   agentLastActivity,
   agentStatuses,
   speechBubbles,
@@ -103,6 +105,7 @@ function AgentCardWithBubble({
   pos: AgentMapPosition;
   agentNames: Map<string, string>;
   agentColors: Map<string, string>;
+  agentTypes: Map<string, string>;
   agentLastActivity: Map<string, string>;
   agentStatuses: Map<string, string>;
   speechBubbles: SpeechBubbleData[];
@@ -129,6 +132,7 @@ function AgentCardWithBubble({
       <AgentCard
         agentId={pos.agentId}
         name={agentNames.get(pos.agentId) ?? pos.agentId}
+        agentType={agentTypes.get(pos.agentId) ?? null}
         color={color}
         animationState={pos.animationState}
         pose={pos.pose}
@@ -155,6 +159,7 @@ export function MissionFloor({
   positions,
   agentNames,
   agentColors,
+  agentTypes,
   agentLastActivity,
   agentStatuses,
   speechBubbles,
@@ -204,6 +209,7 @@ export function MissionFloor({
                       pos={group.root}
                       agentNames={agentNames}
                       agentColors={agentColors}
+                      agentTypes={agentTypes}
                       agentLastActivity={agentLastActivity}
                       agentStatuses={agentStatuses}
                       speechBubbles={speechBubbles}
@@ -221,6 +227,7 @@ export function MissionFloor({
                           pos={child}
                           agentNames={agentNames}
                           agentColors={agentColors}
+                          agentTypes={agentTypes}
                           agentLastActivity={agentLastActivity}
                           agentStatuses={agentStatuses}
                           speechBubbles={speechBubbles}
@@ -242,6 +249,7 @@ export function MissionFloor({
                   pos={pos}
                   agentNames={agentNames}
                   agentColors={agentColors}
+                  agentTypes={agentTypes}
                   agentLastActivity={agentLastActivity}
                   agentStatuses={agentStatuses}
                   speechBubbles={speechBubbles}
@@ -277,6 +285,7 @@ export function MissionFloor({
                   pos={pos}
                   agentNames={agentNames}
                   agentColors={agentColors}
+                  agentTypes={agentTypes}
                   agentLastActivity={agentLastActivity}
                   agentStatuses={agentStatuses}
                   speechBubbles={speechBubbles}

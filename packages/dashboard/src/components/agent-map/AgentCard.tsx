@@ -8,6 +8,7 @@ import { useAgentMapStore } from '../../stores/agent-map-store';
 interface AgentCardProps {
   agentId: string;
   name: string;
+  agentType: string | null;
   color: string;
   animationState: AgentAnimationState;
   pose: AgentPose;
@@ -57,6 +58,7 @@ function getPoseIndicator(pose: AgentPose): string {
 function AgentCardInner({
   agentId,
   name,
+  agentType,
   color,
   animationState,
   pose,
@@ -208,11 +210,16 @@ function AgentCardInner({
 
       {/* Info section below sprite */}
       <div className="agent-card-info">
-        {/* Name + pose indicator + timer */}
+        {/* Name + type badge + pose indicator + timer */}
         <div className="agent-card-name-row">
           <span className="agent-card-name" style={{ color }}>
             {name}
           </span>
+          {agentType && (
+            <span className="agent-card-type-badge">
+              {agentType}
+            </span>
+          )}
           {indicator && (
             <span className="agent-card-pose-indicator">{indicator}</span>
           )}
@@ -247,6 +254,7 @@ export const AgentCard = memo(AgentCardInner, (prev, next) => {
     prev.isSelected === next.isSelected &&
     prev.color === next.color &&
     prev.name === next.name &&
+    prev.agentType === next.agentType &&
     prev.compact === next.compact &&
     prev.lastActivityAt === next.lastActivityAt &&
     prev.agentStatus === next.agentStatus

@@ -153,7 +153,8 @@ function AgentRow({
       >
         <div className="flex items-center gap-1">
           <span className={`${statusColor} shrink-0`}>{statusChar}</span>
-          <span className="terminal-dim truncate flex-1">{displayName}</span>
+          <span className="terminal-dim truncate">{displayName}</span>
+          <span className="text-[#006600] shrink-0">[{agent.type}]</span>
           <span className="terminal-dim shrink-0">c:{agent.toolCallCount}</span>
           <span className="terminal-dim shrink-0">{formatRelativeTime(agent.lastActivityAt)}</span>
         </div>
@@ -185,6 +186,7 @@ function AgentRow({
         >
           {displayName}
         </span>
+        <span className="text-[#006600] shrink-0">[{agent.type}]</span>
       </div>
 
       <div className="flex items-center gap-2 ml-4 mt-0.5">

@@ -627,6 +627,102 @@ export const sessionProjectBindingQueries: Record<string, () => Statement> = {
   },
 };
 
+// === Task Completion Queries ===
+
+export const taskCompletionQueries: Record<string, () => Statement> = {
+  getHighConfidenceBindings() {
+    return db().prepare(`
+      SELECT atb.*, pt.title as task_title, pt.status as task_status, pt.sprint_id, pt.project_id
+      FROM agent_task_bindings atb
+      JOIN prd_tasks pt ON atb.prd_task_id = pt.id
+      LEFT JOIN sprints s ON pt.sprint_id = s.id
+      WHERE atb.session_id = ? AND atb.confidence >= ? AND atb.expired_at IS NULL
+        AND pt.status != 'completed' AND pt.status != 'deferred' AND pt.status != 'backlog'
+        AND (s."order" = 1 OR s.id IS NULL)
+      ORDER BY atb.confidence DESC
+    `);
+  },
+
+  getHighConfidenceBindingsForAgent() {
+    return db().prepare(`
+      SELECT atb.*, pt.title as task_title, pt.status as task_status, pt.sprint_id, pt.project_id
+      FROM agent_task_bindings atb
+      JOIN prd_tasks pt ON atb.prd_task_id = pt.id
+      LEFT JOIN sprints s ON pt.sprint_id = s.id
+      WHERE atb.agent_id = ? AND atb.session_id = ? AND atb.confidence >= ? AND atb.expired_at IS NULL
+        AND pt.status != 'completed' AND pt.status != 'deferred' AND pt.status != 'backlog'
+        AND (s."order" = 1 OR s.id IS NULL)
+      ORDER BY atb.confidence DESC
+    `);
+  },
+
+  completePrdTask() {
+    return db().prepare(`
+      UPDATE prd_tasks SET status = 'completed', completed_at = ?, updated_at = ?
+      WHERE id = ? AND status != 'completed'
+    `);
+  },
+
+  recalculateSprintTotals() {
+    return db().prepare(`
+      UPDATE sprints SET
+        total_tasks = (SELECT COUNT(*) FROM prd_tasks WHERE sprint_id = ?),
+        completed_tasks = (SELECT COUNT(*) FROM prd_tasks WHERE sprint_id = ? AND status = 'completed')
+      WHERE id = ?
+    `);
+  },
+
+  recalculateProjectTotals() {
+    return db().prepare(`
+      UPDATE projects SET
+        total_tasks = (SELECT COUNT(*) FROM prd_tasks WHERE project_id = ?),
+        completed_tasks = (SELECT COUNT(*) FROM prd_tasks WHERE project_id = ? AND status = 'completed'),
+        updated_at = ?
+      WHERE id = ?
+    `);
+  },
+
+  getPendingHighConfidenceTasks() {
+    return db().prepare(`
+      SELECT DISTINCT pt.*, MAX(atb.confidence) as max_confidence, atb.agent_id as binding_agent_id
+      FROM prd_tasks pt
+      JOIN agent_task_bindings atb ON pt.id = atb.prd_task_id
+      WHERE atb.confidence >= ? AND atb.expired_at IS NULL
+        AND pt.status != 'completed' AND pt.status != 'deferred'
+      GROUP BY pt.id
+      ORDER BY max_confidence DESC
+    `);
+  },
+
+  getCompletionStats() {
+    return db().prepare(`
+      SELECT
+        (SELECT COUNT(*) FROM prd_tasks WHERE project_id = ?) as total,
+        (SELECT COUNT(*) FROM prd_tasks WHERE project_id = ? AND status = 'completed') as completed
+    `);
+  },
+
+  getAutoCompletedCount() {
+    return db().prepare(`
+      SELECT COUNT(DISTINCT cal.prd_task_id) as count
+      FROM correlation_audit_log cal
+      WHERE cal.layer = 'auto_complete' AND cal.matched = 1
+        AND cal.prd_task_id IN (SELECT id FROM prd_tasks WHERE project_id = ?)
+    `);
+  },
+
+  getTasksBySection() {
+    return db().prepare(`
+      SELECT * FROM prd_tasks WHERE prd_section LIKE ('%' || ? || '%') AND status != 'completed' AND status != 'deferred'
+    `);
+  },
+
+  getTasksByIds() {
+    // Note: caller must build the IN clause dynamically
+    return db().prepare(`SELECT * FROM prd_tasks WHERE id = ? AND status != 'completed'`);
+  },
+};
+
 // === Agent-Task Bindings ===
 
 export const agentTaskBindingQueries: Record<string, () => Statement> = {
