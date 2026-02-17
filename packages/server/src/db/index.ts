@@ -29,6 +29,14 @@ export function initDb(dbPath?: string): Database.Database {
   const schema = readFileSync(schemaPath, 'utf-8');
   db.exec(schema);
 
+  // Add correlation columns to events table (safe for existing DBs)
+  try {
+    db.exec(`ALTER TABLE events ADD COLUMN correlation_id TEXT`);
+  } catch { /* column already exists */ }
+  try {
+    db.exec(`ALTER TABLE events ADD COLUMN causation_id TEXT`);
+  } catch { /* column already exists */ }
+
   return db;
 }
 

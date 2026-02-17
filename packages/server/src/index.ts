@@ -24,6 +24,7 @@ import { sprintsRouter } from "./routes/sprints.js";
 import { tasksRouter } from "./routes/tasks.js";
 import { parsePrdRouter } from "./routes/parse-prd.js";
 import { sessionGroupsRouter } from "./routes/session-groups.js";
+import { correlationAuditRouter } from "./routes/correlation-audit.js";
 
 export function createApp() {
   const app = express();
@@ -52,6 +53,9 @@ export function createApp() {
 
   // Session groups (multi-agent teams)
   app.use("/api/session-groups", sessionGroupsRouter);
+
+  // Correlation audit log
+  app.use("/api/correlation-audit", correlationAuditRouter);
 
   // Pilar 2 routes
   app.use("/api/projects", projectsRouter);

@@ -6,8 +6,8 @@ export const DEFAULT_BIND_HOST = "0.0.0.0";
 export const SSE_HEARTBEAT_INTERVAL_MS = 15_000;
 export const AGENT_IDLE_TIMEOUT_MS = 30_000;
 
-export const MAX_INPUT_LENGTH = 5000;
-export const MAX_OUTPUT_LENGTH = 5000;
+export const MAX_INPUT_LENGTH = 50000;
+export const MAX_OUTPUT_LENGTH = 50000;
 
 export const DEFAULT_EVENT_LIMIT = 100;
 export const DEFAULT_SESSION_LIMIT = 10;

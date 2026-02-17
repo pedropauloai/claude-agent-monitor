@@ -604,3 +604,95 @@ export const prdDocumentQueries: Record<string, () => Statement> = {
     `);
   },
 };
+
+// === Correlation Audit Log ===
+
+export const correlationAuditQueries: Record<string, () => Statement> = {
+  insert() {
+    return db().prepare(`
+      INSERT INTO correlation_audit_log (id, event_id, prd_task_id, session_id, agent_id, layer, score, matched, reason, timestamp)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+  },
+
+  getRecent() {
+    return db().prepare(`
+      SELECT cal.*, pt.title as task_title
+      FROM correlation_audit_log cal
+      LEFT JOIN prd_tasks pt ON cal.prd_task_id = pt.id
+      ORDER BY cal.timestamp DESC
+      LIMIT ? OFFSET ?
+    `);
+  },
+
+  getByEvent() {
+    return db().prepare(`
+      SELECT * FROM correlation_audit_log WHERE event_id = ? ORDER BY score DESC
+    `);
+  },
+
+  getByTask() {
+    return db().prepare(`
+      SELECT * FROM correlation_audit_log WHERE prd_task_id = ? ORDER BY timestamp DESC LIMIT ? OFFSET ?
+    `);
+  },
+};
+
+// === Session-Project Bindings ===
+
+export const sessionProjectBindingQueries: Record<string, () => Statement> = {
+  bind() {
+    return db().prepare(`
+      INSERT INTO session_project_bindings (session_id, project_id, bound_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(session_id) DO UPDATE SET project_id = excluded.project_id, bound_at = excluded.bound_at
+    `);
+  },
+
+  getBySession() {
+    return db().prepare(`SELECT * FROM session_project_bindings WHERE session_id = ?`);
+  },
+
+  getByProject() {
+    return db().prepare(`SELECT * FROM session_project_bindings WHERE project_id = ?`);
+  },
+};
+
+// === Agent-Task Bindings ===
+
+export const agentTaskBindingQueries: Record<string, () => Statement> = {
+  bind() {
+    return db().prepare(`
+      INSERT INTO agent_task_bindings (id, agent_id, session_id, prd_task_id, confidence, bound_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+  },
+
+  getActiveByAgent() {
+    return db().prepare(`
+      SELECT * FROM agent_task_bindings
+      WHERE agent_id = ? AND session_id = ? AND expired_at IS NULL
+      ORDER BY bound_at DESC LIMIT 1
+    `);
+  },
+
+  getActiveByTask() {
+    return db().prepare(`
+      SELECT * FROM agent_task_bindings
+      WHERE prd_task_id = ? AND expired_at IS NULL
+    `);
+  },
+
+  expire() {
+    return db().prepare(`
+      UPDATE agent_task_bindings SET expired_at = ?
+      WHERE agent_id = ? AND session_id = ? AND expired_at IS NULL
+    `);
+  },
+
+  expireByTask() {
+    return db().prepare(`
+      UPDATE agent_task_bindings SET expired_at = ? WHERE prd_task_id = ? AND expired_at IS NULL
+    `);
+  },
+};

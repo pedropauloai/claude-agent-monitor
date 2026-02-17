@@ -190,3 +190,55 @@ CREATE TABLE IF NOT EXISTS prd_documents (
 );
 
 CREATE INDEX IF NOT EXISTS idx_prd_documents_project ON prd_documents(project_id);
+
+-- === Correlation Audit Log (Sprint 7) ===
+
+CREATE TABLE IF NOT EXISTS correlation_audit_log (
+  id TEXT PRIMARY KEY,
+  event_id TEXT NOT NULL,
+  prd_task_id TEXT,
+  session_id TEXT NOT NULL,
+  agent_id TEXT NOT NULL,
+  layer TEXT NOT NULL,
+  score REAL NOT NULL DEFAULT 0,
+  matched INTEGER NOT NULL DEFAULT 0,
+  reason TEXT,
+  timestamp TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+  FOREIGN KEY (prd_task_id) REFERENCES prd_tasks(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_correlation_audit_event ON correlation_audit_log(event_id);
+CREATE INDEX IF NOT EXISTS idx_correlation_audit_task ON correlation_audit_log(prd_task_id);
+CREATE INDEX IF NOT EXISTS idx_correlation_audit_timestamp ON correlation_audit_log(timestamp);
+
+-- === Session-Project Bindings (Sprint 7) ===
+
+CREATE TABLE IF NOT EXISTS session_project_bindings (
+  session_id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  bound_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+-- === Agent-Task Bindings (Sprint 7) ===
+
+CREATE TABLE IF NOT EXISTS agent_task_bindings (
+  id TEXT PRIMARY KEY,
+  agent_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  prd_task_id TEXT NOT NULL,
+  confidence REAL NOT NULL DEFAULT 0.5,
+  bound_at TEXT NOT NULL DEFAULT (datetime('now')),
+  expired_at TEXT,
+  FOREIGN KEY (prd_task_id) REFERENCES prd_tasks(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_agent_task_bindings_agent ON agent_task_bindings(agent_id, session_id);
+CREATE INDEX IF NOT EXISTS idx_agent_task_bindings_task ON agent_task_bindings(prd_task_id);
+CREATE INDEX IF NOT EXISTS idx_agent_task_bindings_active ON agent_task_bindings(agent_id, session_id, expired_at);
+
+-- For existing databases, run these ALTER TABLE statements manually:
+-- ALTER TABLE events ADD COLUMN correlation_id TEXT;
+-- ALTER TABLE events ADD COLUMN causation_id TEXT;
