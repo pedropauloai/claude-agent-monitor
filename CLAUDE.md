@@ -57,6 +57,6 @@ pnpm lint         # Lint all packages
 
 ## References
 
-- @PRD.md for full project specification
+- PRD.md - full project specification (read manually when needed, not auto-loaded)
 - @packages/shared/src/types/ for all data models
 - @packages/server/src/db/schema.sql for database schema

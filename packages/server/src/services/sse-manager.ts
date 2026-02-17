@@ -5,29 +5,30 @@ interface SSEClient {
   id: string;
   res: Response;
   sessionFilter?: string;
-  groupFilter?: string;
+  projectFilter?: string;
 }
 
 /**
- * Resolver function to get all session IDs belonging to a group.
+ * Resolver function to get all session IDs belonging to a project.
  * Set by the server during initialization to avoid circular imports.
  */
-type GroupSessionResolver = (groupId: string) => string[];
+type ProjectSessionResolver = (projectId: string) => string[];
 
 class SSEManager {
   private clients: Map<string, SSEClient> = new Map();
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
-  private groupSessionResolver: GroupSessionResolver | null = null;
+  private projectSessionResolver: ProjectSessionResolver | null = null;
 
   /**
-   * Set the resolver that maps group IDs to session IDs.
+   * Set the resolver that maps project IDs to session IDs.
    * This avoids circular imports between sse-manager and queries.
+   * Placeholder for Sprint 8 Project Router implementation.
    */
-  setGroupSessionResolver(resolver: GroupSessionResolver): void {
-    this.groupSessionResolver = resolver;
+  setProjectSessionResolver(resolver: ProjectSessionResolver): void {
+    this.projectSessionResolver = resolver;
   }
 
-  addClient(id: string, res: Response, sessionFilter?: string, groupFilter?: string): void {
+  addClient(id: string, res: Response, sessionFilter?: string, projectFilter?: string): void {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -37,7 +38,7 @@ class SSEManager {
 
     res.write(`event: connected\ndata: ${JSON.stringify({ clientId: id, timestamp: new Date().toISOString() })}\n\n`);
 
-    this.clients.set(id, { id, res, sessionFilter, groupFilter });
+    this.clients.set(id, { id, res, sessionFilter, projectFilter });
 
     res.on('close', () => {
       this.clients.delete(id);
@@ -68,11 +69,11 @@ class SSEManager {
 
   /**
    * Determine if a message should be delivered to a specific client.
-   * Supports both session-level and group-level filtering.
+   * Supports session-level and project-level filtering.
    */
   private shouldDeliverToClient(client: SSEClient, sessionId?: string): boolean {
     // No filter on client = receives everything
-    if (!client.sessionFilter && !client.groupFilter) {
+    if (!client.sessionFilter && !client.projectFilter) {
       return true;
     }
 
@@ -81,11 +82,11 @@ class SSEManager {
       return true;
     }
 
-    // Group filter: check if sessionId belongs to the group
-    if (client.groupFilter && sessionId && this.groupSessionResolver) {
+    // Project filter: check if sessionId belongs to the project
+    if (client.projectFilter && sessionId && this.projectSessionResolver) {
       try {
-        const groupSessionIds = this.groupSessionResolver(client.groupFilter);
-        if (groupSessionIds.includes(sessionId)) {
+        const projectSessionIds = this.projectSessionResolver(client.projectFilter);
+        if (projectSessionIds.includes(sessionId)) {
           return true;
         }
       } catch {

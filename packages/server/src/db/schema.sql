@@ -75,7 +75,8 @@ CREATE TABLE IF NOT EXISTS task_items (
   FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 );
 
--- === Session Groups (Multi-Agent Teams) ===
+-- === Session Groups (DEPRECATED Sprint 8: replaced by project_registry) ===
+-- Tables kept for backward compatibility with existing databases.
 
 CREATE TABLE IF NOT EXISTS session_groups (
   id TEXT PRIMARY KEY,
@@ -221,6 +222,19 @@ CREATE TABLE IF NOT EXISTS session_project_bindings (
   FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
+
+-- === Project Registry (Sprint 8) ===
+
+CREATE TABLE IF NOT EXISTS project_registry (
+  working_directory TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
+  registered_at TEXT NOT NULL DEFAULT (datetime('now')),
+  prd_path TEXT,
+  hooks_installed INTEGER NOT NULL DEFAULT 0,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_registry_project ON project_registry(project_id);
 
 -- === Agent-Task Bindings (Sprint 7) ===
 

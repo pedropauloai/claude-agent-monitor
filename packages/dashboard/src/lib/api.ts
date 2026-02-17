@@ -134,51 +134,43 @@ export async function parsePrd(data: { content: string; method?: string }) {
   });
 }
 
-// === Session Groups (Multi-Agent Teams) ===
+// === Project Registry (Sprint 8) ===
 
-export interface SessionGroupMember {
-  groupId: string;
-  sessionId: string;
-  agentName?: string;
-  agentType?: string;
-  joinedAt: string;
-  sessionStatus: string;
-  startedAt: string;
-  endedAt?: string;
-  agentCount: number;
-  eventCount: number;
-  workingDirectory: string;
+export interface ProjectRegistration {
+  working_directory: string;
+  project_id: string;
+  registered_at: string;
+  prd_path?: string;
+  hooks_installed: number;
+  project_name?: string;
+  project_status?: string;
 }
 
-export interface SessionGroup {
-  id: string;
-  name?: string;
-  mainSessionId: string;
-  createdAt: string;
-  memberCount: number;
-  members: SessionGroupMember[];
+export async function getRegisteredProjects() {
+  return request<{ registrations: ProjectRegistration[] }>('/registry');
 }
 
-export async function fetchActiveSessionGroup(): Promise<SessionGroup | null> {
+export async function getProjectSessions(projectId: string) {
+  const query = new URLSearchParams();
+  query.set('project_id', projectId);
+  return request<{ sessions: any[] }>(`/sessions?${query.toString()}`);
+}
+
+export async function getProjectAgents(projectId: string) {
   try {
-    const res = await fetch(`${BASE_URL}/session-groups/active`);
-    if (!res.ok) return null;
-    const data = await res.json();
-    return (data.group as SessionGroup) ?? null;
+    const { sessions } = await getProjectSessions(projectId);
+    const allAgents: any[] = [];
+    for (const session of sessions) {
+      try {
+        const { agents } = await getAgents(session.id);
+        allAgents.push(...agents);
+      } catch {
+        // skip
+      }
+    }
+    return { agents: allAgents };
   } catch {
-    return null;
+    return { agents: [] };
   }
 }
 
-export async function fetchSessionGroupAgents(groupId: string) {
-  return request<{ agents: any[] }>(`/session-groups/${groupId}/agents`);
-}
-
-export async function fetchSessionGroupEvents(groupId: string, params?: { category?: string; limit?: number; offset?: number }) {
-  const query = new URLSearchParams();
-  if (params?.category) query.set('category', params.category);
-  if (params?.limit) query.set('limit', String(params.limit));
-  if (params?.offset) query.set('offset', String(params.offset));
-  const qs = query.toString();
-  return request<{ events: any[]; sessionIds: string[] }>(`/session-groups/${groupId}/events${qs ? `?${qs}` : ''}`);
-}

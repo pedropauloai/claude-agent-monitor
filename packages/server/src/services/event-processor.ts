@@ -14,10 +14,13 @@ import {
   sessionQueries,
   fileChangeQueries,
   taskItemQueries,
-  sessionGroupQueries,
-  sessionGroupMemberQueries,
 } from "../db/queries.js";
 import { sseManager } from "./sse-manager.js";
+import {
+  bindSessionToProject,
+  getProjectForSession,
+  getSessionsForProject,
+} from "./project-router.js";
 
 /**
  * Track spawned subagents per session for SubagentStop correlation.
@@ -27,32 +30,12 @@ import { sseManager } from "./sse-manager.js";
 const spawnedSubagentQueue = new Map<string, string[]>();
 
 /**
- * Session grouping timeout (ms). When a new session appears within this window
- * of an active group's last activity, it is auto-added to the group.
- * Default: 5 minutes. Covers tmux pane startup delay for Claude Code Teams.
- */
-const SESSION_GROUP_WINDOW_MS = 5 * 60 * 1000;
-
-/**
  * Queue of pending agent names from Task tool calls.
  * When main agent spawns a subagent via Task tool with a `name` parameter,
  * we queue that name. When a new SessionStart arrives (the subagent starting),
  * we dequeue and assign the name to that session's agent.
  */
 const pendingAgentNames: string[] = [];
-
-/**
- * Resolve agent name from pending queue (FIFO).
- * Returns the next queued name or undefined if queue is empty.
- */
-function resolveNameFromPendingQueue(sessionId: string): string | undefined {
-  // Only consume from queue for new sessions (not for existing ones)
-  const groupId = getGroupIdForSession(sessionId);
-  if (groupId && pendingAgentNames.length > 0) {
-    return pendingAgentNames.shift();
-  }
-  return undefined;
-}
 
 /** Stale session timeout (ms). Sessions inactive for this long are marked completed. */
 const STALE_SESSION_TIMEOUT_MS = 10 * 60 * 1000;
@@ -148,6 +131,28 @@ function extractError(data?: Record<string, unknown>): string | undefined {
   return typeof err === "string" ? err : undefined;
 }
 
+/**
+ * Broadcast an event to all sessions belonging to the same project,
+ * EXCLUDING the originating session (to avoid duplicate delivery).
+ */
+function broadcastToProjectExcluding(
+  projectId: string,
+  eventType: string,
+  data: unknown,
+  excludeSessionId: string,
+): void {
+  try {
+    const sessionIds = getSessionsForProject(projectId);
+    for (const sid of sessionIds) {
+      if (sid !== excludeSessionId) {
+        sseManager.broadcast(eventType, data, sid);
+      }
+    }
+  } catch {
+    // Ignore broadcast errors (DB not ready, etc.)
+  }
+}
+
 export function processEvent(incoming: IncomingEvent): AgentEvent {
   const now = new Date().toISOString();
   const sessionId = incoming.session_id || "default";
@@ -180,323 +185,13 @@ export function processEvent(incoming: IncomingEvent): AgentEvent {
   // Broadcast event to the session's own listeners
   sseManager.broadcast("agent_event", event, sessionId);
 
-  // Cross-group broadcasting: also send to all other sessions in the same group
-  const groupId = getGroupIdForSession(sessionId);
-  if (groupId) {
-    broadcastToGroupExcluding(groupId, "agent_event", event, sessionId);
+  // Cross-broadcast to all sessions in the same project
+  const projectId = getProjectForSession(sessionId);
+  if (projectId) {
+    broadcastToProjectExcluding(projectId, "agent_event", event, sessionId);
   }
 
   return event;
-}
-
-/**
- * Handle session grouping for multi-agent teams.
- * When Claude Code Teams runs with tmux, each agent gets its own session_id.
- * This function groups them together so the dashboard can show a unified view.
- */
-function handleSessionGrouping(event: AgentEvent, isNewSession: boolean): void {
-  try {
-    const sessionId = event.sessionId;
-
-    // Check if this session already belongs to a group
-    const existingMember = sessionGroupMemberQueries
-      .getBySessionId()
-      .get(sessionId) as Record<string, unknown> | undefined;
-    if (existingMember) {
-      // Already grouped - nothing to do for grouping
-      return;
-    }
-
-    // Check for an active group
-    const activeGroup = sessionGroupQueries.getActiveGroup().get() as
-      | Record<string, unknown>
-      | undefined;
-
-    if (event.hookType === "SessionStart") {
-      if (activeGroup) {
-        // Active group exists - add this session as a member (likely a teammate)
-        // Try to resolve name from pending queue first (Task tool correlation)
-        const pendingName =
-          pendingAgentNames.length > 0 ? pendingAgentNames.shift() : undefined;
-        const agentName =
-          pendingName ||
-          (event.metadata?.["agent_name"] as string) ||
-          (event.metadata?.["agent_type"] as string) ||
-          undefined;
-        const agentType =
-          (event.metadata?.["agent_type"] as string) || undefined;
-        sessionGroupMemberQueries
-          .add()
-          .run(
-            activeGroup["id"] as string,
-            sessionId,
-            agentName || null,
-            agentType || null,
-            event.timestamp,
-          );
-
-        // Update agent name retroactively if resolved from pending queue
-        if (agentName) {
-          agentQueries.updateAgentName().run(agentName, sessionId, sessionId);
-        }
-
-        const groupId = activeGroup["id"] as string;
-        sseManager.broadcast(
-          "session_group_member_added",
-          {
-            groupId,
-            sessionId,
-            agentName,
-            agentType,
-            timestamp: event.timestamp,
-          },
-          sessionId,
-        );
-
-        // Also broadcast to all existing group members
-        broadcastToGroup(groupId, "session_group_member_added", {
-          groupId,
-          sessionId,
-          agentName,
-          agentType,
-          timestamp: event.timestamp,
-        });
-      } else {
-        // No active group - create one with this session as main
-        const groupId = randomUUID();
-        const groupName =
-          (event.metadata?.["working_directory"] as string)?.split("/").pop() ||
-          "team";
-        sessionGroupQueries
-          .create()
-          .run(groupId, groupName, sessionId, event.timestamp);
-        sessionGroupMemberQueries
-          .add()
-          .run(groupId, sessionId, "main", null, event.timestamp);
-
-        sseManager.broadcast(
-          "session_group_created",
-          {
-            groupId,
-            name: groupName,
-            mainSessionId: sessionId,
-            timestamp: event.timestamp,
-          },
-          sessionId,
-        );
-      }
-      return;
-    }
-
-    // For new sessions that appear without a SessionStart hook (common case)
-    if (isNewSession) {
-      if (activeGroup) {
-        // Check if the active group had recent activity (within the grouping window).
-        // Use latest member join time (not group creation time) so that teams
-        // that form gradually still group correctly.
-        const groupId = activeGroup["id"] as string;
-        const latestRow = sessionGroupQueries
-          .getLatestMemberJoinedAt()
-          .get(groupId) as Record<string, unknown> | undefined;
-        const latestJoined = latestRow?.["latest_joined_at"] as
-          | string
-          | undefined;
-        const referenceTime =
-          latestJoined || (activeGroup["created_at"] as string);
-        const refMs = new Date(referenceTime).getTime();
-        const eventTime = new Date(event.timestamp).getTime();
-
-        if (eventTime - refMs < SESSION_GROUP_WINDOW_MS) {
-          // Within the window - add as member
-          const agentName =
-            (event.metadata?.["agent_name"] as string) || undefined;
-          const agentType =
-            (event.metadata?.["agent_type"] as string) || undefined;
-          sessionGroupMemberQueries
-            .add()
-            .run(
-              groupId,
-              sessionId,
-              agentName || null,
-              agentType || null,
-              event.timestamp,
-            );
-
-          broadcastToGroup(groupId, "session_group_member_added", {
-            groupId,
-            sessionId,
-            agentName,
-            agentType,
-            timestamp: event.timestamp,
-          });
-          return;
-        }
-      }
-
-      // No active group or outside the window - create a new group
-      const groupId = randomUUID();
-      const workDir = (event.metadata?.["working_directory"] as string) || "";
-      const groupName =
-        workDir.split("/").pop() || workDir.split("\\").pop() || "session";
-      sessionGroupQueries
-        .create()
-        .run(groupId, groupName, sessionId, event.timestamp);
-      sessionGroupMemberQueries
-        .add()
-        .run(groupId, sessionId, "main", null, event.timestamp);
-
-      sseManager.broadcast(
-        "session_group_created",
-        {
-          groupId,
-          name: groupName,
-          mainSessionId: sessionId,
-          timestamp: event.timestamp,
-        },
-        sessionId,
-      );
-    }
-
-    // Handle TeamCreate tool - ensure a group exists and update its name
-    if (event.tool === "TeamCreate") {
-      let teamName = "team";
-      try {
-        const input = (event.metadata?.["tool_input"] ??
-          event.metadata) as Record<string, unknown>;
-        teamName =
-          (input?.["team_name"] as string) ??
-          (input?.["teamName"] as string) ??
-          "team";
-      } catch {
-        // skip
-      }
-
-      const existingGroupForSession = sessionGroupQueries
-        .getBySessionId()
-        .get(sessionId) as Record<string, unknown> | undefined;
-      if (existingGroupForSession) {
-        // Group exists - update the name if it's generic (e.g., 'session', 'team')
-        const currentName = existingGroupForSession["name"] as string;
-        if (
-          !currentName ||
-          currentName === "session" ||
-          currentName === "team"
-        ) {
-          sessionGroupQueries
-            .updateName()
-            .run(teamName, existingGroupForSession["id"] as string);
-        }
-      } else {
-        // No group exists - create one
-        const groupId = randomUUID();
-        sessionGroupQueries
-          .create()
-          .run(groupId, teamName, sessionId, event.timestamp);
-        sessionGroupMemberQueries
-          .add()
-          .run(groupId, sessionId, "main", null, event.timestamp);
-
-        sseManager.broadcast(
-          "session_group_created",
-          {
-            groupId,
-            name: teamName,
-            mainSessionId: sessionId,
-            timestamp: event.timestamp,
-          },
-          sessionId,
-        );
-      }
-    }
-  } catch {
-    // Grouping errors should not break event processing
-  }
-}
-
-/**
- * Broadcast an SSE event to all sessions in a group.
- * This ensures the dashboard sees events from all agents regardless of which session they're in.
- */
-function broadcastToGroup(
-  groupId: string,
-  eventType: string,
-  data: unknown,
-): void {
-  try {
-    const members = sessionGroupMemberQueries
-      .getAllSessionIdsInGroup()
-      .all(groupId) as Array<Record<string, unknown>>;
-    for (const member of members) {
-      const memberSessionId = member["session_id"] as string;
-      sseManager.broadcast(eventType, data, memberSessionId);
-    }
-  } catch {
-    // ignore broadcast errors
-  }
-}
-
-/**
- * Broadcast to all sessions in a group EXCEPT the specified session.
- * Used to avoid double-broadcasting to the originating session.
- */
-function broadcastToGroupExcluding(
-  groupId: string,
-  eventType: string,
-  data: unknown,
-  excludeSessionId: string,
-): void {
-  try {
-    const members = sessionGroupMemberQueries
-      .getAllSessionIdsInGroup()
-      .all(groupId) as Array<Record<string, unknown>>;
-    for (const member of members) {
-      const memberSessionId = member["session_id"] as string;
-      if (memberSessionId !== excludeSessionId) {
-        sseManager.broadcast(eventType, data, memberSessionId);
-      }
-    }
-  } catch {
-    // ignore broadcast errors
-  }
-}
-
-/**
- * Get the group ID for a session (if any), for cross-session broadcasting.
- */
-function getGroupIdForSession(sessionId: string): string | undefined {
-  try {
-    const group = sessionGroupQueries.getBySessionId().get(sessionId) as
-      | Record<string, unknown>
-      | undefined;
-    return group ? (group["id"] as string) : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * Check if all sessions in a group are completed.
- * If so, broadcast a group_completed event.
- */
-function checkGroupCompletion(groupId: string, now: string): void {
-  try {
-    const members = sessionGroupMemberQueries
-      .getByGroup()
-      .all(groupId) as Array<Record<string, unknown>>;
-    const allCompleted = members.every((m) => {
-      const status = m["session_status"] as string;
-      return status === "completed" || status === "error";
-    });
-    if (allCompleted && members.length > 0) {
-      broadcastToGroup(groupId, "session_group_completed", {
-        groupId,
-        timestamp: now,
-        memberCount: members.length,
-      });
-    }
-  } catch {
-    // ignore
-  }
 }
 
 function persistEvent(event: AgentEvent, now: string): void {
@@ -504,7 +199,6 @@ function persistEvent(event: AgentEvent, now: string): void {
   const existingSession = sessionQueries.getById().get(event.sessionId) as
     | Record<string, unknown>
     | undefined;
-  const isNewSession = !existingSession;
   if (!existingSession) {
     const workDir =
       (event.metadata?.["working_directory"] as string) || process.cwd();
@@ -519,18 +213,27 @@ function persistEvent(event: AgentEvent, now: string): void {
     sessionQueries.updateStatus().run("active", null, event.sessionId);
     // Re-activate the main agent too
     agentQueries.updateStatus().run("active", now, "main", event.sessionId);
-    sseManager.broadcast(
-      "session_status",
-      {
-        session: event.sessionId,
-        status: "active",
-      },
-      event.sessionId,
-    );
+    const reactivatePayload = {
+      session: event.sessionId,
+      status: "active",
+    };
+    sseManager.broadcast("session_status", reactivatePayload, event.sessionId);
+
+    // Cross-broadcast session reactivation to project peers
+    const pidReactivate = getProjectForSession(event.sessionId);
+    if (pidReactivate) {
+      broadcastToProjectExcluding(pidReactivate, "session_status", reactivatePayload, event.sessionId);
+    }
   }
 
-  // Handle session grouping for multi-agent teams
-  handleSessionGrouping(event, isNewSession);
+  // Bind session to project via working_directory (Project-First Architecture)
+  const isNewSession = !existingSession;
+  if (isNewSession || event.hookType === "SessionStart") {
+    const workDir = (event.metadata?.["working_directory"] as string) || "";
+    if (workDir) {
+      bindSessionToProject(event.sessionId, workDir);
+    }
+  }
 
   sessionQueries.incrementEventCount().run(event.sessionId);
 
@@ -549,10 +252,11 @@ function persistEvent(event: AgentEvent, now: string): void {
       event.hookType === "SessionStart" && event.metadata?.["agent_type"]
         ? (event.metadata["agent_type"] as string)
         : undefined;
+    const pendingName = pendingAgentNames.length > 0 ? pendingAgentNames.shift() : undefined;
     const agentName =
       agentNameFromType ||
       (event.metadata?.["agent_name"] as string) ||
-      resolveNameFromPendingQueue(event.sessionId) ||
+      pendingName ||
       event.agentId;
     agentQueries
       .upsert()
@@ -581,15 +285,11 @@ function persistEvent(event: AgentEvent, now: string): void {
       timestamp: event.timestamp,
     };
     sseManager.broadcast("agent_created", agentCreatedPayload, event.sessionId);
-    // Cross-group broadcast
-    const gidCreated = getGroupIdForSession(event.sessionId);
-    if (gidCreated) {
-      broadcastToGroupExcluding(
-        gidCreated,
-        "agent_created",
-        agentCreatedPayload,
-        event.sessionId,
-      );
+
+    // Cross-broadcast agent_created to project peers
+    const pidCreated = getProjectForSession(event.sessionId);
+    if (pidCreated) {
+      broadcastToProjectExcluding(pidCreated, "agent_created", agentCreatedPayload, event.sessionId);
     }
   }
 
@@ -611,14 +311,11 @@ function persistEvent(event: AgentEvent, now: string): void {
         status: "active",
       };
       sseManager.broadcast("agent_status", activePayload, event.sessionId);
-      const gidActive = getGroupIdForSession(event.sessionId);
-      if (gidActive) {
-        broadcastToGroupExcluding(
-          gidActive,
-          "agent_status",
-          activePayload,
-          event.sessionId,
-        );
+
+      // Cross-broadcast active status to project peers
+      const pidActive = getProjectForSession(event.sessionId);
+      if (pidActive) {
+        broadcastToProjectExcluding(pidActive, "agent_status", activePayload, event.sessionId);
       }
     } else {
       // PreToolUse: just update timestamp, no SSE broadcast
@@ -640,14 +337,11 @@ function persistEvent(event: AgentEvent, now: string): void {
       status: "error",
     };
     sseManager.broadcast("agent_status", errorPayload, event.sessionId);
-    const gidError = getGroupIdForSession(event.sessionId);
-    if (gidError) {
-      broadcastToGroupExcluding(
-        gidError,
-        "agent_status",
-        errorPayload,
-        event.sessionId,
-      );
+
+    // Cross-broadcast error status to project peers
+    const pidError = getProjectForSession(event.sessionId);
+    if (pidError) {
+      broadcastToProjectExcluding(pidError, "agent_status", errorPayload, event.sessionId);
     }
   }
 
@@ -661,14 +355,11 @@ function persistEvent(event: AgentEvent, now: string): void {
       status: "completed",
     };
     sseManager.broadcast("agent_status", completedPayload, event.sessionId);
-    const gidStop = getGroupIdForSession(event.sessionId);
-    if (gidStop) {
-      broadcastToGroupExcluding(
-        gidStop,
-        "agent_status",
-        completedPayload,
-        event.sessionId,
-      );
+
+    // Cross-broadcast completed status to project peers
+    const pidCompleted = getProjectForSession(event.sessionId);
+    if (pidCompleted) {
+      broadcastToProjectExcluding(pidCompleted, "agent_status", completedPayload, event.sessionId);
     }
 
     const activeAgents = (
@@ -678,18 +369,19 @@ function persistEvent(event: AgentEvent, now: string): void {
     ).filter((a) => a["status"] === "active");
     if (activeAgents.length === 0) {
       sessionQueries.updateStatus().run("completed", now, event.sessionId);
+      const sessionCompletedPayload = {
+        session: event.sessionId,
+        status: "completed",
+      };
       sseManager.broadcast(
         "session_status",
-        {
-          session: event.sessionId,
-          status: "completed",
-        },
+        sessionCompletedPayload,
         event.sessionId,
       );
 
-      // Check if ALL sessions in the group are completed
-      if (gidStop) {
-        checkGroupCompletion(gidStop, now);
+      // Cross-broadcast session_status to project peers
+      if (pidCompleted) {
+        broadcastToProjectExcluding(pidCompleted, "session_status", sessionCompletedPayload, event.sessionId);
       }
     }
   }
@@ -708,14 +400,11 @@ function persistEvent(event: AgentEvent, now: string): void {
         status: "shutdown",
       };
       sseManager.broadcast("agent_status", shutdownPayload, event.sessionId);
-      const gidSub = getGroupIdForSession(event.sessionId);
-      if (gidSub) {
-        broadcastToGroupExcluding(
-          gidSub,
-          "agent_status",
-          shutdownPayload,
-          event.sessionId,
-        );
+
+      // Cross-broadcast shutdown status to project peers
+      const pidShutdown = getProjectForSession(event.sessionId);
+      if (pidShutdown) {
+        broadcastToProjectExcluding(pidShutdown, "agent_status", shutdownPayload, event.sessionId);
       }
     }
     // NOTE: Do NOT mark event.agentId ('main') as shutdown - SubagentStop
@@ -979,12 +668,6 @@ export function cleanupStaleSessions(): void {
         },
         sessionId,
       );
-
-      // Check group completion
-      const groupId = getGroupIdForSession(sessionId);
-      if (groupId) {
-        checkGroupCompletion(groupId, now);
-      }
     }
 
     if (staleSessions.length > 0) {

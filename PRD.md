@@ -1998,13 +1998,86 @@ Rewrite completo do Correlation Engine. O dogfooding real revelou que o sistema 
 - Novos hook handlers: TaskCompleted (fornece task_id + task_subject nativamente - GOLD para correlacao), SubagentStart (agent_id + agent_type), PostToolUseFailure (captura falhas). O Claude Code ja suporta esses hooks mas o CAM nao os captura
 - Correlation ID + Causation Chain: adicionar campos correlation_id e causation_id na tabela events. Padrao OpenTelemetry/Arkency - propagar contexto de task pela cadeia de eventos do mesmo agente. Permite agrupar "tudo que aconteceu para esta task" no dashboard
 
+### Sprint 8 - Project-First Architecture (12 tasks) 🔜
+
+Arquitetura "Project-First": o projeto e a entidade central, nao a sessao. Hoje o CAM tenta adivinhar qual projeto pertence a uma sessao usando janelas de tempo e agrupamento automatico (session_groups). Isso e complexo, fragil, e confuso para iniciantes. Este sprint substitui toda essa logica por um modelo direto: o usuario registra o projeto com `cam init`, o CAM detecta o PRD automaticamente, e quando o Claude Code abre naquele diretorio, a conexao e instantanea via `working_directory`. Um unico servidor CAM gerencia multiplos projetos simultaneamente.
+
+**Secao 1 - Project Registry (3 tasks)**:
+- Sistema de registro de projetos: tabela `project_registry` mapeando `working_directory` para `project_id`. Verificacao de unicidade (um diretorio = um projeto). API endpoints para CRUD de registros. O registro e a fonte de verdade para "quais projetos o CAM monitora"
+- Comando `cam init`: CLI interativo que registra o diretorio atual como projeto CAM. Detecta nome do projeto pelo `package.json` ou nome da pasta. Pede confirmacao ao usuario. Cria arquivo `.cam/config.json` local com project_id. Mensagens claras e amigaveis para iniciantes
+- Auto-detect de PRD.md com parse e confirmacao: durante `cam init`, busca `PRD.md` ou `prd.md` na raiz. Se encontrar, parseia usando o structured parser existente. Exibe resumo ("Encontrei 3 sprints, 47 tasks") e pede confirmacao. Se nao encontrar, informa que pode importar depois via dashboard ou `cam import`
+
+**Secao 2 - Connection Architecture (3 tasks)**:
+- Project Router: middleware no server que recebe eventos dos hooks e roteia para o projeto correto comparando `working_directory` do evento com os projetos registrados. Match por prefixo (suporta subdiretorios). Rejeita silenciosamente eventos de diretorios nao registrados
+- Simplificar session binding: substituir logica de session_groups por vinculo direto `working_directory` para projeto. Quando SessionStart chega, o Project Router identifica o projeto e cria o binding automaticamente. Sem janelas de tempo, sem heuristicas
+- Remover session_groups: deletar tabelas `session_groups` e `session_group_members`, remover endpoints `/api/session-groups/*`, remover logica de auto-grouping do event handler, remover queries relacionadas. Limpar codigo morto
+
+**Secao 3 - Hook Management (3 tasks)**:
+- Auto-instalacao de hooks via `cam init`: detectar `.claude/settings.json` (global ou local), adicionar/atualizar configuracao de hooks apontando para `@cam/hook`. Backup do settings original antes de modificar. Verificar se hooks ja existem para nao duplicar
+- Validacao de hooks com `cam doctor`: comando que verifica se hooks estao corretamente instalados, se o servidor esta rodando, se o projeto esta registrado. Checklist com status (check/X) para cada item. Sugestao de correcao para cada problema encontrado
+- Tratamento de diretorios nao registrados: eventos de sessoes em diretorios sem `cam init` sao silenciosamente ignorados (logados em nivel debug). Sem erros, sem warnings visiveis ao usuario. Opcao futura: notificar "projeto nao monitorado detectado"
+
+**Secao 4 - Multi-Project Server (3 tasks)**:
+- API endpoints multi-projeto: `GET /api/projects` retorna projetos registrados com status ativo/inativo/arquivado, `GET /api/projects/:id/summary` com contadores de tasks/agents/sessions, `POST /api/projects/:id/archive` para arquivar. Filtros por status
+- SSE streams por projeto: parametro `project_id` no endpoint SSE para filtrar eventos. Cliente recebe apenas eventos do projeto selecionado. Suporte a trocar de projeto sem reconectar (re-subscribe)
+- Comando `cam status`: exibir tabela formatada com projetos registrados, sessoes ativas, ultima atividade, e saude da conexao. Indicadores visuais para status de cada projeto. Util para debug e para o usuario entender o estado do sistema
+
+### Sprint 9 - Dashboard Experience (16 tasks) 🔜
+
+Redesign da experiencia do dashboard: navegacao multi-projeto, sistema unificado de configuracoes, paineis redimensionaveis, e limpeza de redundancias. Hoje o dashboard assume projeto unico, tem controles espalhados em 3 lugares diferentes (header, Agent Map header, Activity Feed header), e o Event Timeline aparece em todas as views sem contexto. Este sprint transforma o dashboard em uma experiencia profissional e personalizavel.
+
+**Secao 1 - Multi-Project Navigation (3 tasks)**:
+- Sidebar de projetos: lista lateral colapsavel com todos os projetos registrados. Cada item mostra nome, status (ativo/inativo), e contagem de tasks (completadas/total). Ordenacao: ativos primeiro, depois por ultima atividade. Botao para colapsar sidebar em modo icone
+- Project switcher: clicar em um projeto na sidebar troca todo o contexto do dashboard (kanban, agents, timeline, Agent Map). Transicao suave entre projetos. URL atualiza com project_id para permitir bookmark/compartilhamento direto
+- Indicador de projeto ativo: badge visual no projeto que tem sessao Claude rodando. Animacao sutil (pulse) quando eventos chegam em tempo real. Contador de agentes ativos no badge
+
+**Secao 2 - Settings Infrastructure (3 tasks)**:
+- Unified `useSettingsStore` com Zustand persist: consolidar configuracoes de theme-store (theme, accentColor), filter-store (followMode, hidePolling), session-store (activityWindow), e agent-map-store (displayMode, showLabels, showInteractions) em um unico store persistido. Chave localStorage `cam-settings`. Migrar leitura de todos os componentes para o novo store. Manter stores antigos para dados nao-configuracao (session data, events, etc.)
+- SettingsModal component com navegacao por abas: modal overlay com 4 abas (Aparencia, Agent Map, Activity Feed, Avancado). Layout responsivo, fecha com Escape ou click fora. Deve funcionar em todos os 3 temas com styling apropriado (glassmorphism no Modern, pixel borders no Pixel, box-drawing no Terminal)
+- Gear icon no header + atalho Ctrl+Comma: substituir ThemeSwitcher e ActivityWindowSelector no header principal por um unico icone de engrenagem. Atalho de teclado `Ctrl+,` (padrao VS Code) para abrir o modal de qualquer lugar. Badge no icone se houver configuracao nao-default
+
+**Secao 3 - Settings Modal Content (4 tasks)**:
+- Aba Aparencia: seletor de tema (Modern/Pixel/Terminal) com preview visual, color picker para accent color (8 cores pre-definidas + custom hex input), seletor de resolucao de sprites (Classic 16x16, Detailed 24x24, HD 32x32, Ultra 48x48) com preview ao vivo do sprite na resolucao selecionada
+- Aba Agent Map: toggles para activity labels (ON/OFF), linhas de comunicacao (ON/OFF), modo de speech bubbles (Tecnico/Didatico com descricao de cada modo), seletor de janela de atividade (1m/3m/5m/10m) com explicacao do que cada valor significa
+- Aba Activity Feed: toggle follow mode (auto-scroll ON/OFF), toggle hide polling (esconder TaskList/TaskGet repetitivos), lista editavel de tools consideradas "polling" (hoje hardcoded: TaskList, TaskGet), toggle para agrupar eventos repetitivos consecutivos
+- Aba Avancado: input numerico para max eventos em memoria (default 500), timeout de speech bubbles em segundos (default 5), max linhas de comunicacao simultaneas (default 5), botao "Restaurar Padroes" que reseta todas as configuracoes para valores default com confirmacao
+
+**Secao 4 - Resizable Panels (3 tasks)**:
+- Sistema de paineis redimensionaveis: integrar biblioteca de panels (react-resizable-panels) para permitir arrastar bordas entre paineis. Minimo e maximo de largura/altura por painel. Cursor visual de resize nas bordas. Double-click na borda para resetar ao tamanho default
+- Persistencia de layout: salvar tamanhos dos paineis em localStorage (chave `cam-layout`). Restaurar layout ao reabrir o dashboard. Diferentes layouts salvos por view (kanban view vs agent map view). Reset para layout default disponivel nas configuracoes
+- Lock/unlock de paineis: toggle nas configuracoes (Aba Avancado) para travar/destravar redimensionamento. Quando travado, bordas nao sao arrastaveis e cursor nao muda. Indicador visual sutil de que paineis estao travados. Atalho de teclado `Ctrl+L` para toggle rapido
+
+**Secao 5 - Layout Cleanup (3 tasks)**:
+- Limpar header principal: remover componentes ThemeSwitcher e ActivityWindowSelector do header. Manter apenas: logo/titulo, ConnectionIndicator, ProjectPicker, e gear icon. Resultado: header significativamente mais limpo com apenas controles de navegacao
+- Limpar Agent Map header: remover toggles de Labels, Didactic/Technical, e Lines do AgentMapHeader. Componentes devem ler configuracoes diretamente do useSettingsStore. Header do mapa fica apenas com titulo + contagem de agentes
+- Event Timeline contextual: remover Event Timeline da exibicao global persistente. Timeline so aparece como painel dedicado quando selecionado, ou como painel lateral dentro de views especificas (Agent Map, Kanban). Painel pode ser aberto/fechado pelo usuario
+
+### Sprint 10 - Visual Polish (10 tasks) 🔜
+
+Upgrade do sistema visual: renderer Canvas 2D para sprites de alta resolucao, integracao de temas no novo sistema de settings, e refinamentos visuais gerais. Os sprites 16x16 atuais (CSS box-shadow) sao charmosos mas limitados em detalhes e performance. Este sprint introduz 4 niveis de resolucao renderizados via Canvas 2D com cache inteligente, e garante que todos os novos componentes (sidebar, settings modal, resizable panels) tenham styling consistente nos 3 temas.
+
+**Secao 1 - Canvas Sprite Renderer (3 tasks)**:
+- Canvas 2D sprite renderer com cache: substituir CSS box-shadow por rendering via OffscreenCanvas. Funcao `renderSpriteToDataUrl(pixels, gridSize, displaySize, primaryColor)` que pinta pixels no canvas e retorna data URL cached. Cache key = hash de (pose + color + resolution). Usar `image-rendering: pixelated` / `crisp-edges` para manter pixels nitidos ao escalar. Componente exibe `<img src={cachedUrl}>` em vez de div com box-shadow
+- Sprite resolution config com lazy loading: dynamic import de sprite data por resolucao (`sprite-data-16.ts`, `sprite-data-24.ts`, `sprite-data-32.ts`, `sprite-data-48.ts`). Carregar apenas o arquivo da resolucao ativa. Fallback para 16x16 se resolucao maior nao disponivel. Invalidar cache quando resolucao muda no settings
+- Atualizar PixelCharacter e AgentCard para Canvas renderer: substituir generateBoxShadow por novo renderSpriteToDataUrl. Manter TODAS as animacoes CSS existentes (aplicadas no container, nao nos pixels). Manter overlays de pose (coding particles, terminal cursor, confetti, zzz). Garantir backward-compatibility: se Canvas nao disponivel, fallback para box-shadow
+
+**Secao 2 - High-Resolution Sprite Data (4 tasks)**:
+- Sprite data 24x24 "Detailed": redesenhar todas as 8 poses (IDLE, CODING, READING, TERMINAL, TALKING, SEARCHING, MANAGING, CELEBRATING) em grid 24x24. Metodo hibrido: upscale dos sprites 16x16 como base + refinamento com detalhes adicionais (expressao facial, ferramenta na mao, textura de roupa). ~150 pixels por pose. Manter mesma paleta de cores (P/S/H/D/E/K/G/W/B)
+- Sprite data 32x32 "HD": redesenhar todas as 8 poses em grid 32x32. Detalhes visiveis: expressoes faciais distintas, ferramentas detalhadas (teclado no CODING, livro aberto no READING, monitor no TERMINAL), sombreamento no corpo, roupas com textura. ~350 pixels por pose
+- Sprite data 48x48 "Ultra": redesenhar todas as 8 poses em grid 48x48. Nivel de detalhe maximo: rosto expressivo com olhos/boca, ferramentas com detalhes internos, sombras projetadas, highlights de iluminacao, acessorios por pose (headphones no CODING, lupa brilhante no SEARCHING, clipboard detalhado no MANAGING). ~900 pixels por pose
+- Sprite preview no Settings Modal: componente que renderiza um agente de exemplo na resolucao selecionada. Botao para ciclar entre as 8 poses. Mostra comparacao lado-a-lado entre resolucao atual e selecionada. Animacao de transicao suave ao trocar resolucao. Nome da resolucao com descricao (ex: "Classic 16x16 - Estilo NES nostalgico")
+
+**Secao 3 - Theme Integration (3 tasks)**:
+- Integrar SettingsModal nos 3 temas: Modern (glassmorphism, rounded corners, shadows), Pixel (pixel borders via box-shadow, Press Start 2P font, NES color palette), Terminal (box-drawing characters, green-on-black, monospace). Cada tema deve ter seu proprio wrapper de styling para o modal
+- Styling de paineis redimensionaveis por tema: handles de resize estilizados para cada tema (sutil no Modern, pixel art no Pixel, caracteres ASCII no Terminal). Indicadores visuais de drag consistentes com o tema ativo
+- Styling da sidebar de projetos por tema: sidebar com visual consistente para cada tema. Modern (glassmorphism lateral), Pixel (painel NES com borda pixelada), Terminal (lista com caracteres box-drawing)
+
 ---
 
 ## 11. Backlog
 
 ### v1.1 - "Intelligence" (14 tasks)
 
-- Theme customization (cores, fontes)
 - Export de sessao/projeto (JSON, CSV, Markdown report)
 - Diff viewer inline
 - Dark/Light mode no tema Modern

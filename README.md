@@ -1,30 +1,52 @@
-```
+<p align="center">
+  <pre align="center">
    ██████╗ █████╗ ███╗   ███╗
   ██╔════╝██╔══██╗████╗ ████║
   ██║     ███████║██╔████╔██║
   ██║     ██╔══██║██║╚██╔╝██║
   ╚██████╗██║  ██║██║ ╚═╝ ██║
    ╚═════╝╚═╝  ╚═╝╚═╝     ╚═╝
-```
+  </pre>
+</p>
 
-# Claude Agent Monitor
+<h1 align="center">Claude Agent Monitor</h1>
 
-**Mission Control for Claude Code agents: real-time observability + visual PRD/Sprint tracking.**
+<p align="center">
+  <strong>Mission Control for Claude Code agents.</strong><br>
+  Real-time observability + visual PRD/Sprint tracking.<br>
+  Watch your AI agents work. Learn how they build. Ship faster.
+</p>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
-[![pnpm](https://img.shields.io/badge/pnpm-workspace-orange)](https://pnpm.io/)
+<p align="center">
+  <a href="https://github.com/pedropauloai/claude-agent-monitor/stargazers"><img src="https://img.shields.io/github/stars/pedropauloai/claude-agent-monitor?style=social" alt="GitHub Stars"></a>
+  <a href="https://github.com/pedropauloai/claude-agent-monitor/network/members"><img src="https://img.shields.io/github/forks/pedropauloai/claude-agent-monitor?style=social" alt="GitHub Forks"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/pedropauloai/claude-agent-monitor/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen" alt="Node.js"></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.7-blue" alt="TypeScript"></a>
+  <a href="https://pnpm.io/"><img src="https://img.shields.io/badge/pnpm-workspace-orange" alt="pnpm"></a>
+  <a href="https://github.com/pedropauloai/claude-agent-monitor/commits"><img src="https://img.shields.io/github/last-commit/pedropauloai/claude-agent-monitor" alt="Last Commit"></a>
+  <a href="https://github.com/pedropauloai/claude-agent-monitor/issues"><img src="https://img.shields.io/github/issues/pedropauloai/claude-agent-monitor" alt="Issues"></a>
+</p>
 
 ---
 
-## Why CAM?
+## Who is this for?
 
-When you run Claude Code with background agents and teams, the experience is a black box. You have no idea if an agent is stuck, which files it changed, or how far along your project is. The only option is manually reading output files and running `tail` on logs.
+CAM was built for developers who use **Claude Code** (with Opus model) to build full-stack applications. Whether you call it "vibe-coding" or AI-assisted development, the experience today is a **black box**:
 
-**CAM changes that.** It hooks into Claude Code's native hook system to capture every tool call, file change, error, and lifecycle event -- then streams it all to a beautiful real-time dashboard. Pair it with a PRD and watch your Kanban board update itself as agents complete tasks.
+- You have no idea what the agent is doing
+- You can't tell if it's stuck or making progress
+- When you use teams of agents, it's chaos
+- You learn nothing from the process
 
-Two pillars, one dashboard:
+**CAM changes that.** It's a dashboard that connects to Claude Code via hooks and shows you everything in real-time. Think of it as a **flight control center** for your AI agents.
+
+> **Learning through observability**: The core concept of CAM. By watching agents work, you understand *how* software is built -- not just the final result. Perfect for beginners who want to learn by doing.
+
+### Two Pillars, One Dashboard
 
 | Pillar | What it answers | Data source |
 |--------|----------------|-------------|
@@ -35,36 +57,51 @@ Two pillars, one dashboard:
 
 ## Quick Start
 
-### Agent Monitoring Only
+### Step 1: Install
 
 ```bash
-# Install globally
 npm install -g claude-agent-monitor
+```
 
-# Initialize hooks in your project
+### Step 2: Initialize your project
+
+```bash
 cd your-project
 cam init
+# CAM will:
+#   - Detect your PRD.md automatically (if present)
+#   - Parse it into sprints and tasks
+#   - Configure Claude Code hooks
+#   - Register the project for monitoring
+```
 
-# Start the monitoring server + dashboard
+### Step 3: Start working
+
+```bash
+# Start the CAM server + dashboard
 cam start
 
-# In another terminal, use Claude Code as normal
-claude "implement auth module using a team of 3 agents"
+# In another terminal, use Claude Code as you normally would
+claude "implement the auth module"
 
 # Open http://localhost:7891 and watch everything in real-time
 ```
 
-### Full Mission Control (with PRD)
+That's it. Three commands and you have full observability.
+
+### Full Mission Control (with PRD Tracking)
+
+If you have a PRD file, CAM can track your entire project:
 
 ```bash
-# Initialize with your PRD for full project tracking
+# Import your PRD during init
 cam init --prd ./PRD.md
 
-# Review the extracted tasks and sprints, then confirm
+# Review the extracted sprints and tasks, then confirm
 cam start
 
-# Tell Claude Code to work through the PRD
-claude "read PRD.md and implement all tasks using a team of agents"
+# Tell Claude to work through the PRD
+claude "read PRD.md and implement all Sprint 1 tasks"
 
 # Watch tasks move themselves across the Kanban board
 ```
@@ -73,14 +110,14 @@ claude "read PRD.md and implement all tasks using a team of agents"
 
 ## Screenshots
 
-> Screenshots coming soon. Here is what each view shows:
+> Screenshots and GIF demos coming soon. Here is what each view shows:
 
-- **Modern Theme** -- Clean, dark dashboard with agent cards, real-time activity feed, file watcher, session timeline, and stats bar. Inspired by Linear and Vercel.
+- **Modern Theme** -- Clean dark dashboard with agent cards, real-time activity feed, file watcher, session timeline, and stats bar. Inspired by Linear and Vercel.
 - **Terminal Theme** -- Green-on-black interface with tmux-style panes, ASCII sparklines, vim keybindings, and CRT scan line effects.
 - **Pixel Art Theme** -- Retro RPG aesthetic with pixel borders, NES color palette, game-style HUD, and 8-bit typography.
+- **Agent Map** -- Pixel art visualization where agents are animated characters on a "Mission Floor". Watch them code, search, talk, and celebrate in real-time.
 - **Kanban Board** -- Auto-updating task board with columns for Backlog, Planned, In Progress, In Review, Completed, and Blocked.
 - **Burndown Chart** -- Real vs ideal progress lines with scope change indicators and sprint velocity tracking.
-- **Dependency Graph** -- Interactive node graph showing task dependencies, critical path highlighting, and blocked task indicators.
 
 ---
 
@@ -90,29 +127,29 @@ claude "read PRD.md and implement all tasks using a team of agents"
 
 - **Real-time activity feed** -- Every tool call, file edit, bash command, and message streamed live via SSE
 - **Agent panel** -- See all agents with live status indicators (active, idle, error, completed, shutdown)
+- **Agent Map** -- Pixel art visualization with 8 animated poses, speech bubbles, activity labels, and hierarchy lines
 - **File watcher** -- Track every file created, modified, or read, with per-agent attribution and touch counts
 - **Session timeline** -- Gantt-style visualization of agent activity over time
 - **Stats bar** -- Live counters for duration, tool calls, errors, files modified, and events per minute
 - **Agent detail view** -- Deep dive into any agent's tool history, files touched, errors, and current task
 - **Error tracking** -- Instant visibility into tool errors, rejected tool calls, and agent failures
-- **Context compaction tracking** -- Monitor when agents compact their context and how much is retained
 
 ### Pillar 2 -- PRD Tracker
 
 - **PRD import and parsing** -- Feed in a markdown PRD and get structured tasks, sprints, and dependencies extracted automatically
 - **Auto-updating Kanban** -- Tasks move between columns on their own as agents call TaskCreate and TaskUpdate
 - **Sprint progress** -- Live progress bars, completion percentages, and velocity metrics for the active sprint
+- **Correlation Engine v2** -- 5-layer scoring pipeline that automatically matches agent events to PRD tasks (exact ID, tag similarity, file domain, title similarity, keyword overlap)
 - **Burndown chart** -- Classic burndown with ideal vs actual lines, scope changes, and time-based projections
 - **Dependency graph** -- Interactive visualization of task dependencies with critical path and blocker detection
 - **PRD overview** -- Color-coded view of your entire PRD with per-section completion percentages
-- **Project selector** -- Switch between projects and view modes (Monitor, Tracker, or combined Mission Control)
-- **Correlation engine** -- Automatically matches agent events to PRD tasks using fuzzy matching
+- **Multi-project support** -- Monitor multiple projects from a single CAM dashboard *(coming in Sprint 8)*
 
 ---
 
 ## Themes
 
-CAM ships with three complete visual themes. Switch anytime with `cam theme <name>` or the in-dashboard theme switcher.
+CAM ships with three complete visual themes. Switch anytime from the settings or with `cam theme <name>`.
 
 ### Modern (Default)
 
@@ -124,29 +161,68 @@ Clean, professional dashboard inspired by Linear, Vercel, and Raycast. Dark back
 
 ### Pixel Art
 
-Retro RPG aesthetic with NES-era 16-color palette, pixel borders, Press Start 2P font, and game-style HUD elements. Progress bars fill pixel by pixel. Activity logs read like RPG battle text. For developers who appreciate nostalgia.
+Retro RPG aesthetic with NES-era 16-color palette, pixel borders, Press Start 2P font, and game-style HUD elements. Progress bars fill pixel by pixel. Activity logs read like RPG battle text. Home of the Agent Map visualization.
+
+---
+
+## How It Works
+
+```
+  You use Claude Code normally
+          |
+          | hook fires automatically
+          v
+  +-----------------+     POST      +------------------+
+  |   cam-hook      | -----------> |   CAM Server     |
+  |   (< 10ms)      |              |   (Express +     |
+  |   zero deps     |              |    SQLite)       |
+  +-----------------+              +--------+---------+
+                                            |
+                              +-------------+-------------+
+                              |                           |
+                              v                           v
+                     +----------------+         +------------------+
+                     |   Dashboard    |         |   Correlation    |
+                     |   (React +     |         |   Engine         |
+                     |    real-time)  |         |   (auto-links    |
+                     +----------------+         |    to PRD tasks) |
+                                                +------------------+
+```
+
+**Step by step:**
+
+1. You run Claude Code in your project as normal
+2. Claude Code executes an action (edit a file, run a command, etc.)
+3. A configured **hook** fires and sends a tiny JSON payload to the CAM server
+4. The server stores it in SQLite and emits an **SSE event**
+5. The dashboard receives the event and updates the UI in **real-time**
+6. If PRD tracking is enabled, the **Correlation Engine** maps tool calls to PRD tasks automatically
+
+The hook binary is ultra-fast (< 10ms) and fails silently. It **never** blocks Claude Code, even if the CAM server is not running.
 
 ---
 
 ## Architecture
 
-```
-Claude Code (hooks) --> CAM Server (Express + SQLite) --> Dashboard (React + Vite)
-                              |
-                         SSE (real-time events)
-                         REST API (polling every 15s)
-```
-
-**How it works:**
-
-1. Claude Code executes an action (e.g., Edit a file)
-2. A configured hook fires a shell command
-3. The `cam-hook` binary sends a POST to the local CAM server
-4. The server processes, stores in SQLite, and emits an SSE event
-5. The dashboard receives the SSE event and updates the UI in real-time
-6. For PRD tracking, the correlation engine maps tool calls to PRD tasks automatically
-
 ### Monorepo Structure
+
+```
+                          +------------------+
+                          |   @cam/shared    |
+                          |   Types, Schemas |
+                          +--------+---------+
+                                   |
+                     used by all packages below
+                                   |
+          +------------+-----------+-----------+------------+
+          |            |                       |            |
+          v            v                       v            v
+   +------------+ +------------+       +------------+ +------------+
+   | @cam/hook  | | @cam/cli   |       | @cam/server| | @cam/      |
+   | Hook binary| | Terminal   |------>| API + DB   |-->| dashboard |
+   | (zero deps)| | commands   |       | + SSE      | | React UI   |
+   +------------+ +------------+       +------------+ +------------+
+```
 
 | Package | Description | Key Tech |
 |---------|-------------|----------|
@@ -178,6 +254,16 @@ Claude Code (hooks) --> CAM Server (Express + SQLite) --> Dashboard (React + Vit
 
 ## CLI Commands
 
+### Getting Started
+
+```bash
+cam init                     # Register project + detect PRD + configure hooks
+cam init --prd ./PRD.md      # Register project with explicit PRD import
+cam start                    # Start server + dashboard (opens browser)
+cam status                   # Show registered projects, active sessions, health
+cam doctor                   # Diagnose common issues (hooks, server, project)
+```
+
 ### Server and Dashboard
 
 ```bash
@@ -185,21 +271,16 @@ cam start                    # Start server + dashboard (opens browser)
 cam start --port 8080        # Custom server port
 cam start --theme terminal   # Start with a specific theme
 cam start --no-open          # Don't auto-open browser
-cam status                   # Show server status and stats
 cam sessions                 # List previous sessions
 cam sessions --clear         # Clear session history
 ```
 
-### Initialization and Hooks
+### Hooks
 
 ```bash
-cam init                     # Configure hooks in current project
-cam init --prd ./PRD.md      # Configure hooks + import PRD
-cam init --prd ./PRD.md --parse ai  # Parse PRD with AI assistance
-cam init --force             # Overwrite existing hooks
 cam hooks --list             # Show configured hooks
 cam hooks --remove           # Remove CAM hooks (preserves others)
-cam hooks --test             # Send a test event
+cam hooks --test             # Send a test event to verify connectivity
 ```
 
 ### Projects and Sprints
@@ -242,27 +323,67 @@ CAM captures the following Claude Code hook events:
 
 | Hook | When it fires | What CAM does with it |
 |------|--------------|----------------------|
+| `SessionStart` | When a Claude Code session begins | Creates session, binds to project via working directory |
+| `SessionEnd` | When a session ends | Marks session completed, final stats |
 | `PreToolUse` | Before every tool call | Records agent intent, tracks tool usage |
-| `PostToolUse` | After tool call completes | Records result, duration, detects errors |
+| `PostToolUse` | After tool call completes | Records result, duration, detects errors, correlates to PRD tasks |
+| `UserPromptSubmit` | When user sends a prompt | Tracks user interaction within sessions |
 | `Notification` | Claude Code sends a notification | Displays alerts in dashboard |
 | `Stop` | Main agent stops | Marks session end, triggers cleanup |
 | `SubagentStop` | A teammate agent stops | Tracks agent lifecycle |
 | `PreCompact` | Before context compaction | Monitors context usage |
 | `PostCompact` | After context compaction | Tracks compaction efficiency |
 
-The `cam-hook` binary is designed to be ultra-fast (< 10ms) and fail silently. It never blocks Claude Code, even if the CAM server is not running.
+---
+
+## Recommended Workflow
+
+CAM is designed around a **Spec-Driven Development (SDD)** workflow:
+
+### 1. Write your PRD
+
+Create a `PRD.md` file that describes what you want to build. Structure it with sprints and tasks. CAM provides a recommended template.
+
+### 2. Initialize with CAM
+
+```bash
+cd your-project
+cam init
+```
+
+CAM detects your PRD, parses it into sprints and tasks, and sets up monitoring.
+
+### 3. Let Claude Code build it
+
+```bash
+claude "read PRD.md and implement Sprint 1 tasks"
+```
+
+### 4. Watch and learn
+
+Open the CAM dashboard and observe:
+- Which files are being created and modified
+- What tools each agent uses and in what order
+- How tasks move from "Planned" to "Completed"
+- When errors happen and how agents recover
+
+### 5. Evolve your PRD
+
+As the project grows, add new sprints to your PRD. Run `cam project import PRD.md` to sync the new tasks. Your full project history is preserved.
+
+This workflow has been battle-tested building CAM itself (dogfooding since day one).
 
 ---
 
 ## WSL Setup (Windows Subsystem for Linux)
 
-If you run Claude Code inside WSL2 and the CAM server on Windows (or vice versa), there are a few things to know.
+If you run Claude Code inside WSL2 and the CAM server on Windows (or vice versa), here is what you need to know.
 
 ### How it works
 
-The `cam-hook` binary auto-detects WSL by reading `/proc/version`. When WSL is detected, it resolves the Windows host IP via the default gateway (`ip route show default`) or the nameserver in `/etc/resolv.conf`. This means **no manual configuration is needed** in most cases.
+The `cam-hook` binary auto-detects WSL by reading `/proc/version`. When WSL is detected, it resolves the Windows host IP via the default gateway (`ip route show default`) or the nameserver in `/etc/resolv.conf`. **No manual configuration is needed** in most cases.
 
-If auto-detection doesn't work, you can set the host explicitly:
+If auto-detection doesn't work:
 
 ```bash
 export CAM_SERVER_HOST=172.20.0.1   # Replace with your Windows host IP
@@ -272,8 +393,8 @@ export CAM_SERVER_HOST=172.20.0.1   # Replace with your Windows host IP
 
 Some guides suggest using tmux to run Claude Code agents in split panes. This is entirely optional. CAM works with or without tmux:
 
-- **Without tmux**: Run `cam start` in one terminal and `claude` in another. The hook binary sends events to the CAM server directly.
-- **With tmux**: Useful for monitoring multiple agents side by side, but the dashboard already provides this view.
+- **Without tmux**: Run `cam start` in one terminal and `claude` in another
+- **With tmux**: Useful for monitoring multiple agents side by side, but the dashboard already provides this view
 
 ### Transport resilience
 
@@ -286,13 +407,11 @@ The hook binary includes built-in resilience:
 
 ### Debug mode
 
-If events are not arriving at the dashboard, enable debug logging:
-
 ```bash
 export CAM_DEBUG=1
 ```
 
-This prints diagnostic information to stderr, showing which host the hook is trying and any connection errors:
+This prints diagnostic information to stderr:
 
 ```
 [cam-hook] WSL detected, resolving Windows host IP...
@@ -303,29 +422,20 @@ This prints diagnostic information to stderr, showing which host the hook is try
 
 ### Diagnostic script
 
-A diagnostic script is included to verify the full hook-to-server pipeline:
-
 ```bash
 bash scripts/test-wsl-hook.sh
 ```
-
-This tests:
-1. Node.js is available in PATH (tries nvm if not)
-2. Default gateway resolution
-3. Server connectivity via gateway and localhost
-4. Hook binary sends an event successfully
-5. Event arrives at the server
 
 ### Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| Events not arriving | Run `CAM_DEBUG=1 cam-hook pre-tool-use < /dev/null` to see where it tries to connect |
+| Events not arriving | Run `CAM_DEBUG=1 cam-hook pre-tool-use < /dev/null` to see connection attempts |
 | `ECONNREFUSED` on all hosts | Make sure the CAM server is running (`cam start` or `pnpm dev`) |
-| Gateway IP wrong | Set `CAM_SERVER_HOST` explicitly: `export CAM_SERVER_HOST=<windows-ip>` |
-| Node not found in WSL | Ensure Node.js is installed in WSL or that nvm is configured in your shell profile |
-| Hook takes too long | Check network: `curl -s http://<host>:7890/api/sessions`. The hook has a 5s process timeout |
-| Server runs in WSL, dashboard on Windows | Set server bind host to `0.0.0.0`: `cam start --bind 0.0.0.0` |
+| Gateway IP wrong | Set `CAM_SERVER_HOST` explicitly |
+| Node not found in WSL | Ensure Node.js is installed in WSL or that nvm is configured |
+| Hook takes too long | Check network: `curl -s http://<host>:7890/api/sessions` |
+| Server in WSL, dashboard on Windows | Set bind host: `cam start --bind 0.0.0.0` |
 
 ---
 
@@ -339,7 +449,7 @@ This tests:
 ### Setup
 
 ```bash
-git clone https://github.com/user/claude-agent-monitor.git
+git clone https://github.com/pedropauloai/claude-agent-monitor.git
 cd claude-agent-monitor
 pnpm install
 pnpm build        # Build all packages (shared must build first)
@@ -388,7 +498,7 @@ pnpm --filter @cam/dashboard build
 | Server | Express + better-sqlite3 | Lightweight, zero-config database, local file |
 | Real-time | Server-Sent Events (SSE) | Unidirectional, auto-reconnect, no extra libraries |
 | Dashboard | React 19 + Vite | Fast builds, HMR, modern React features |
-| Styling | Tailwind CSS | Consistent design, easy theming across 3 themes |
+| Styling | Tailwind CSS 4 | Consistent design, easy theming across 3 themes |
 | State | Zustand | Minimal boilerplate, one store per domain |
 | Charts | Recharts | React-native charting, simple API |
 | Animation | Framer Motion | Smooth transitions for Modern theme |
@@ -401,18 +511,22 @@ pnpm --filter @cam/dashboard build
 
 ### v1.0 -- Mission Control (Current)
 
-- Real-time agent monitoring via Claude Code hooks
-- Dashboard with 3 complete themes (Modern, Terminal, Pixel Art)
-- PRD import with structured parsing into tasks and sprints
-- Auto-updating Kanban board
-- Sprint progress, burndown charts, dependency graphs
-- Correlation engine linking agent events to PRD tasks
-- CLI for init, start, status, sessions, hooks, and theme management
-- SQLite persistence with full session history
+- [x] Real-time agent monitoring via Claude Code hooks
+- [x] Dashboard with 3 complete themes (Modern, Terminal, Pixel Art)
+- [x] Agent Map with pixel art visualization (8 poses, speech bubbles, animations)
+- [x] PRD import with structured parsing into tasks and sprints
+- [x] Auto-updating Kanban board
+- [x] Sprint progress, burndown charts, dependency graphs
+- [x] Correlation Engine v2 with 5-layer scoring pipeline
+- [x] Multi-agent observability (session grouping, agent lifecycle tracking)
+- [x] CLI for init, start, status, sessions, hooks, and theme management
+- [x] SQLite persistence with full session history
+- [ ] **Sprint 8** -- Project-First Architecture: `cam init` with auto-detect PRD, project router, multi-project support, `cam doctor`
+- [ ] **Sprint 9** -- Dashboard Experience: project sidebar, settings modal, resizable panels, layout cleanup
+- [ ] **Sprint 10** -- Visual Polish: Canvas 2D sprite renderer, high-resolution sprites (24/32/48px), per-theme styling
 
 ### v1.1 -- Intelligence
 
-- **Agent Map** -- Pixel art visualization where agents are characters moving between activity zones (Code, Command, Comms, Research, Rest, Done). The core visual differentiator of CAM.
 - AI-assisted PRD parsing with complexity estimation
 - Automatic dependency suggestions between tasks
 - Session and sprint comparison
@@ -444,69 +558,20 @@ pnpm --filter @cam/dashboard build
 
 ---
 
-## How It Works Under the Hood
-
-### Hook Configuration
-
-When you run `cam init`, CAM adds hook entries to your `.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      { "matcher": "*", "command": "cam-hook pre-tool-use" }
-    ],
-    "PostToolUse": [
-      { "matcher": "*", "command": "cam-hook post-tool-use" }
-    ],
-    "Notification": [
-      { "matcher": "*", "command": "cam-hook notification" }
-    ],
-    "Stop": [
-      { "matcher": "*", "command": "cam-hook stop" }
-    ],
-    "SubagentStop": [
-      { "matcher": "*", "command": "cam-hook subagent-stop" }
-    ],
-    "PreCompact": [
-      { "matcher": "*", "command": "cam-hook pre-compact" }
-    ],
-    "PostCompact": [
-      { "matcher": "*", "command": "cam-hook post-compact" }
-    ]
-  }
-}
-```
-
-Each hook reads environment variables injected by Claude Code (`$CLAUDE_TOOL_NAME`, `$CLAUDE_TOOL_INPUT`, etc.), serializes them to JSON, and sends a POST to the local CAM server. The entire process takes under 10ms and fails silently if the server is not running.
-
-### Correlation Engine (PRD Tracking)
-
-When PRD tracking is enabled, the correlation engine watches incoming events and automatically links them to PRD tasks:
-
-1. **TaskCreate** detected -- Fuzzy-matches against existing PRD tasks or creates an "unplanned" task
-2. **TaskUpdate** with status change -- Updates the corresponding PRD task status
-3. **File Edit/Write** -- If the file is associated with a PRD task, records the activity
-4. **SendMessage** between agents -- Tracks collaboration in the context of tasks
-
-Three correlation modes are available: **Auto** (fuzzy matching, default), **Strict** (exact ID matching only), and **Manual** (user links events to tasks in the dashboard).
-
----
-
 ## Security
 
-- The server runs **only on localhost** -- it is never exposed to the network
-- No authentication required for the MVP (localhost-only is inherently secure)
-- The hook binary never sends data to any external server
-- Tool inputs and outputs are **truncated** to 500 characters to avoid leaking sensitive data
-- The SQLite database is a local file -- no data leaves your machine
+- The server runs **only on localhost** -- never exposed to the network
+- No authentication in the MVP (localhost-only is inherently secure)
+- The hook binary **never** sends data to any external server
+- Tool inputs and outputs are **truncated** to prevent leaking sensitive data
+- SQLite database is a local file -- no data leaves your machine
 - Never commit `.env`, database files, or credentials (enforced by `.gitignore`)
 
 ---
 
 ## Contributing
 
-Contributions are welcome. Here is how to get started:
+Contributions are welcome! Here is how to get started:
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feat/your-feature`
@@ -534,10 +599,25 @@ Contributions are welcome. Here is how to get started:
 
 ---
 
+## Star History
+
+<a href="https://star-history.com/#pedropauloai/claude-agent-monitor&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=pedropauloai/claude-agent-monitor&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=pedropauloai/claude-agent-monitor&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pedropauloai/claude-agent-monitor&type=Date" />
+ </picture>
+</a>
+
+---
+
 ## License
 
 [MIT](LICENSE)
 
 ---
 
-Built with care for the Claude Code community.
+<p align="center">
+  Built with care for the Claude Code community.<br>
+  <sub>CAM is built using CAM (dogfooding since day one).</sub>
+</p>

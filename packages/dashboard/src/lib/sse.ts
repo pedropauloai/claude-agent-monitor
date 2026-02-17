@@ -3,7 +3,7 @@ export type SSEEventHandler = (data: any) => void;
 export interface SSEClientOptions {
   url: string;
   sessionId?: string;
-  groupId?: string;
+  projectId?: string;
   onEvent?: SSEEventHandler;
   onAgentStatus?: SSEEventHandler;
   onSessionStatus?: SSEEventHandler;
@@ -16,9 +16,6 @@ export interface SSEClientOptions {
   onCorrelationMatch?: SSEEventHandler;
   onAgentCreated?: SSEEventHandler;
   onTeamCreated?: SSEEventHandler;
-  onSessionGroupCreated?: SSEEventHandler;
-  onSessionGroupMemberAdded?: SSEEventHandler;
-  onSessionGroupCompleted?: SSEEventHandler;
   onHeartbeat?: SSEEventHandler;
   onConnect?: () => void;
   onDisconnect?: () => void;
@@ -40,9 +37,9 @@ export class SSEClient {
     if (this.source) this.disconnect();
 
     const url = new URL(this.options.url, window.location.origin);
-    // Prefer group_id over session_id when available (multi-agent teams)
-    if (this.options.groupId) {
-      url.searchParams.set('group_id', this.options.groupId);
+    // Prefer project_id over session_id when available (multi-project support)
+    if (this.options.projectId) {
+      url.searchParams.set('project_id', this.options.projectId);
     } else if (this.options.sessionId) {
       url.searchParams.set('session_id', this.options.sessionId);
     }
@@ -73,9 +70,6 @@ export class SSEClient {
     this.addListener('correlation_match', this.options.onCorrelationMatch);
     this.addListener('agent_created', this.options.onAgentCreated);
     this.addListener('team_created', this.options.onTeamCreated);
-    this.addListener('session_group_created', this.options.onSessionGroupCreated);
-    this.addListener('session_group_member_added', this.options.onSessionGroupMemberAdded);
-    this.addListener('session_group_completed', this.options.onSessionGroupCompleted);
     this.addListener('heartbeat', this.options.onHeartbeat);
   }
 

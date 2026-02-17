@@ -108,7 +108,58 @@ export const statusCommand = new Command("status")
       }
     }
 
-    // 3. Hooks configuration check
+    // 3. Registered Projects
+    if (serverOnline) {
+      try {
+        const response = await fetch(
+          `http://localhost:${port}/api/registry`,
+        );
+        if (response.ok) {
+          const data = (await response.json()) as {
+            registrations: Array<{
+              working_directory: string;
+              project_id: string;
+              project_name: string;
+              project_status: string;
+              hooks_installed: number;
+            }>;
+          };
+
+          logger.blank();
+          logger.section("Registered Projects");
+
+          if (data.registrations.length === 0) {
+            logger.info(
+              "No projects registered. Run " +
+                chalk.cyan("'cam init'") +
+                " in a project directory.",
+            );
+          } else {
+            for (const reg of data.registrations) {
+              const hookIcon = reg.hooks_installed
+                ? chalk.green("\u2713")
+                : chalk.yellow("\u25CB");
+              const statusColor =
+                reg.project_status === "active" ? chalk.green : chalk.gray;
+              const dirName =
+                reg.working_directory.split("/").pop() ||
+                reg.working_directory.split("\\").pop() ||
+                reg.working_directory;
+              logger.item(
+                `${hookIcon} ${chalk.cyan(reg.project_name || dirName)} ` +
+                  `${statusColor(`(${reg.project_status})`)} ` +
+                  chalk.gray(`[${dirName}]`),
+              );
+            }
+            logger.keyValue("Total", String(data.registrations.length));
+          }
+        }
+      } catch {
+        logger.warning("Failed to fetch registered projects");
+      }
+    }
+
+    // 4. Hooks configuration check
     logger.blank();
     logger.section("Hooks");
     if (claudeSettingsExist()) {
@@ -133,7 +184,7 @@ export const statusCommand = new Command("status")
       );
     }
 
-    // 4. cam-hook binary check
+    // 5. cam-hook binary check
     logger.blank();
     logger.section("Binary");
     const camHookAvailable = checkBinaryAvailable("cam-hook");
@@ -146,7 +197,7 @@ export const statusCommand = new Command("status")
       logger.info(`Install: ${chalk.cyan("npm install -g @cam/cli")}`);
     }
 
-    // 5. Quick health summary
+    // 6. Quick health summary
     logger.blank();
     logger.section("Health");
     const checks = [

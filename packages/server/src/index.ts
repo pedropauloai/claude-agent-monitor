@@ -9,7 +9,7 @@ import {
 } from "@cam/shared";
 import { initDb, closeDb } from "./db/index.js";
 import { sseManager } from "./services/sse-manager.js";
-import { agentQueries, sessionGroupMemberQueries } from "./db/queries.js";
+import { agentQueries } from "./db/queries.js";
 import { cleanupStaleSessions } from "./services/event-processor.js";
 
 // Routes
@@ -23,8 +23,9 @@ import { projectsRouter } from "./routes/projects.js";
 import { sprintsRouter } from "./routes/sprints.js";
 import { tasksRouter } from "./routes/tasks.js";
 import { parsePrdRouter } from "./routes/parse-prd.js";
-import { sessionGroupsRouter } from "./routes/session-groups.js";
 import { correlationAuditRouter } from "./routes/correlation-audit.js";
+import { registryRouter } from "./routes/registry.js";
+import { getSessionsForProject } from "./services/project-router.js";
 
 export function createApp() {
   const app = express();
@@ -51,11 +52,11 @@ export function createApp() {
   app.use("/api/sessions", eventsRouter); // /api/sessions/:id/events (mounted on eventsRouter)
   app.use("/api/stream", streamRouter);
 
-  // Session groups (multi-agent teams)
-  app.use("/api/session-groups", sessionGroupsRouter);
-
   // Correlation audit log
   app.use("/api/correlation-audit", correlationAuditRouter);
+
+  // Project registry (Sprint 8 - Project-First Architecture)
+  app.use("/api/registry", registryRouter);
 
   // Pilar 2 routes
   app.use("/api/projects", projectsRouter);
@@ -82,15 +83,10 @@ export function startServer(options?: { port?: number; dbPath?: string }) {
   // Initialize database
   initDb(options?.dbPath);
 
-  // Wire up the group session resolver for SSE group filtering
-  sseManager.setGroupSessionResolver((groupId: string) => {
-    const rows = sessionGroupMemberQueries
-      .getAllSessionIdsInGroup()
-      .all(groupId) as Array<Record<string, unknown>>;
-    return rows.map((r) => r["session_id"] as string);
-  });
-
   const app = createApp();
+
+  // Connect SSE Manager to Project Router for project-level filtering
+  sseManager.setProjectSessionResolver(getSessionsForProject);
 
   const bindHost = process.env["CAM_BIND_HOST"] || DEFAULT_BIND_HOST;
   const server = app.listen(port, bindHost, () => {

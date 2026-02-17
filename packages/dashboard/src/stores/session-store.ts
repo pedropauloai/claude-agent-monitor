@@ -5,7 +5,7 @@ export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
 
 interface SessionState {
   session: Session | null;
-  groupId: string | null;
+  projectId: string | null;
   agents: Agent[];
   events: AgentEvent[];
   selectedAgentId: string | null;
@@ -15,7 +15,7 @@ interface SessionState {
   activityWindow: number;
 
   setSession: (session: Session | null) => void;
-  setGroupId: (groupId: string | null) => void;
+  setProjectId: (projectId: string | null) => void;
   setAgents: (agents: Agent[]) => void;
   addAgent: (agent: Agent) => void;
   updateAgent: (agentId: string, updates: Partial<Agent>) => void;
@@ -31,7 +31,7 @@ interface SessionState {
 
 export const useSessionStore = create<SessionState>((set) => ({
   session: null,
-  groupId: null,
+  projectId: null,
   agents: [],
   events: [],
   selectedAgentId: null,
@@ -42,7 +42,7 @@ export const useSessionStore = create<SessionState>((set) => ({
 
   setSession: (session) => set({ session }),
 
-  setGroupId: (groupId) => set({ groupId }),
+  setProjectId: (projectId) => set({ projectId }),
 
   setAgents: (agents) => set({ agents }),
 
@@ -88,7 +88,7 @@ export const useSessionStore = create<SessionState>((set) => ({
   reset: () =>
     set({
       session: null,
-      groupId: null,
+      projectId: null,
       agents: [],
       events: [],
       selectedAgentId: null,

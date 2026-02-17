@@ -8,7 +8,7 @@ import { useTasks } from "./hooks/use-tasks";
 import { useAgentMapSync } from "./hooks/use-agent-map-sync";
 
 export default function App() {
-  const session = useSession();
+  const { session } = useSession();
   useSSE(session?.id);
   useProject();
   useSprint();

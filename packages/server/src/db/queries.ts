@@ -285,95 +285,64 @@ export const taskItemQueries: Record<string, () => Statement> = {
   },
 };
 
-// === Session Groups ===
+// === Project Registry (Sprint 8) ===
 
-export const sessionGroupQueries: Record<string, () => Statement> = {
-  create() {
+export const projectRegistryQueries: Record<string, () => Statement> = {
+  register() {
     return db().prepare(`
-      INSERT INTO session_groups (id, name, main_session_id, created_at)
-      VALUES (?, ?, ?, ?)
+      INSERT OR REPLACE INTO project_registry (working_directory, project_id, registered_at, prd_path, hooks_installed)
+      VALUES (?, ?, datetime('now'), ?, ?)
     `);
   },
 
-  getById() {
-    return db().prepare(`SELECT * FROM session_groups WHERE id = ?`);
-  },
-
-  getAll() {
-    return db().prepare(
-      `SELECT * FROM session_groups ORDER BY created_at DESC`,
-    );
-  },
-
-  getBySessionId() {
+  getByWorkingDir() {
     return db().prepare(`
-      SELECT sg.* FROM session_groups sg
-      JOIN session_group_members sgm ON sg.id = sgm.group_id
-      WHERE sgm.session_id = ?
+      SELECT working_directory, project_id, registered_at, prd_path, hooks_installed
+      FROM project_registry WHERE working_directory = ?
     `);
   },
 
-  getActiveGroup() {
+  getByWorkingDirPrefix() {
     return db().prepare(`
-      SELECT sg.* FROM session_groups sg
-      WHERE EXISTS (
-        SELECT 1 FROM session_group_members sgm
-        JOIN sessions s ON sgm.session_id = s.id
-        WHERE sgm.group_id = sg.id AND s.status = 'active'
-      )
-      ORDER BY sg.created_at DESC
+      SELECT working_directory, project_id, registered_at, prd_path, hooks_installed
+      FROM project_registry WHERE ? LIKE working_directory || '%'
+      ORDER BY length(working_directory) DESC
       LIMIT 1
     `);
   },
 
-  updateName() {
-    return db().prepare(`UPDATE session_groups SET name = ? WHERE id = ?`);
-  },
-
-  getLatestMemberJoinedAt() {
+  getByProject() {
     return db().prepare(`
-      SELECT MAX(sgm.joined_at) as latest_joined_at
-      FROM session_group_members sgm
-      WHERE sgm.group_id = ?
+      SELECT working_directory, project_id, registered_at, prd_path, hooks_installed
+      FROM project_registry WHERE project_id = ?
     `);
   },
 
-  deleteById() {
-    return db().prepare(`DELETE FROM session_groups WHERE id = ?`);
-  },
-};
-
-export const sessionGroupMemberQueries: Record<string, () => Statement> = {
-  add() {
+  getAll() {
     return db().prepare(`
-      INSERT INTO session_group_members (group_id, session_id, agent_name, agent_type, joined_at)
-      VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(group_id, session_id) DO UPDATE SET
-        agent_name = COALESCE(excluded.agent_name, session_group_members.agent_name),
-        agent_type = COALESCE(excluded.agent_type, session_group_members.agent_type)
+      SELECT pr.working_directory, pr.project_id, pr.registered_at, pr.prd_path, pr.hooks_installed,
+             p.name as project_name, p.status as project_status
+      FROM project_registry pr
+      JOIN projects p ON pr.project_id = p.id
+      ORDER BY pr.registered_at DESC
     `);
   },
 
-  getByGroup() {
+  updateHooksInstalled() {
     return db().prepare(`
-      SELECT sgm.*, s.status as session_status, s.started_at, s.ended_at,
-             s.agent_count, s.event_count, s.working_directory
-      FROM session_group_members sgm
-      JOIN sessions s ON sgm.session_id = s.id
-      WHERE sgm.group_id = ?
-      ORDER BY sgm.joined_at ASC
+      UPDATE project_registry SET hooks_installed = ? WHERE working_directory = ?
     `);
   },
 
-  getBySessionId() {
+  updatePrdPath() {
     return db().prepare(`
-      SELECT * FROM session_group_members WHERE session_id = ?
+      UPDATE project_registry SET prd_path = ? WHERE working_directory = ?
     `);
   },
 
-  getAllSessionIdsInGroup() {
+  delete() {
     return db().prepare(`
-      SELECT session_id FROM session_group_members WHERE group_id = ?
+      DELETE FROM project_registry WHERE working_directory = ?
     `);
   },
 };

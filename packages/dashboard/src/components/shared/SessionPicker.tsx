@@ -11,8 +11,6 @@ interface SessionOption {
   status: string;
   agentCount: number;
   eventCount: number;
-  isGroup: boolean;
-  groupId?: string;
 }
 
 function formatSessionLabel(session: Session): string {
@@ -37,7 +35,7 @@ export function SessionPicker() {
 }
 
 function useSessionOptions() {
-  const { session, groupId, setSession, setGroupId } = useSessionStore();
+  const { session, setSession } = useSessionStore();
   const [options, setOptions] = useState<SessionOption[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -56,28 +54,7 @@ function useSessionOptions() {
           status: s.status,
           agentCount: s.agentCount,
           eventCount: s.eventCount,
-          isGroup: false,
         }));
-
-        // Try to fetch session groups
-        try {
-          const group = await api.fetchActiveSessionGroup();
-          if (!cancelled && group) {
-            // Insert group at the top
-            opts.unshift({
-              id: group.mainSessionId,
-              label: group.name ?? `Grupo ${shortId(group.id)}`,
-              sublabel: `${group.memberCount} agentes`,
-              status: "active",
-              agentCount: group.memberCount,
-              eventCount: 0,
-              isGroup: true,
-              groupId: group.id,
-            });
-          }
-        } catch {
-          // no groups
-        }
 
         setOptions(opts);
       } catch {
@@ -95,15 +72,8 @@ function useSessionOptions() {
 
   const selectSession = async (opt: SessionOption) => {
     try {
-      if (opt.isGroup && opt.groupId) {
-        setGroupId(opt.groupId);
-        const { session: s } = await api.getSession(opt.id);
-        if (s) setSession(s as Session);
-      } else {
-        setGroupId(null);
-        const { session: s } = await api.getSession(opt.id);
-        if (s) setSession(s as Session);
-      }
+      const { session: s } = await api.getSession(opt.id);
+      if (s) setSession(s as Session);
     } catch {
       // ignore
     }
@@ -111,7 +81,6 @@ function useSessionOptions() {
   };
 
   const currentId = session?.id ?? null;
-  const currentGroupId = groupId;
 
   return {
     options,
@@ -119,7 +88,6 @@ function useSessionOptions() {
     setIsOpen,
     selectSession,
     currentId,
-    currentGroupId,
   };
 }
 
@@ -159,17 +127,12 @@ function ModernVariant() {
     setIsOpen,
     selectSession,
     currentId,
-    currentGroupId,
   } = useSessionOptions();
   const ref = useRef<HTMLDivElement>(null);
   useClickOutside(ref, () => setIsOpen(false));
 
   const currentLabel =
-    options.find(
-      (o) =>
-        (o.isGroup && o.groupId === currentGroupId) ||
-        (!o.isGroup && o.id === currentId && !currentGroupId),
-    )?.label ?? "Sem sessao";
+    options.find((o) => o.id === currentId)?.label ?? "Sem sessao";
 
   return (
     <div ref={ref} className="relative">
@@ -187,12 +150,10 @@ function ModernVariant() {
       {isOpen && options.length > 0 && (
         <div className="absolute top-full mt-1 right-0 z-[100] w-72 max-h-64 overflow-y-auto rounded-lg border border-cam-border/50 bg-cam-bg/95 backdrop-blur-sm shadow-xl">
           {options.map((opt) => {
-            const isActive =
-              (opt.isGroup && opt.groupId === currentGroupId) ||
-              (!opt.isGroup && opt.id === currentId && !currentGroupId);
+            const isActive = opt.id === currentId;
             return (
               <button
-                key={opt.isGroup ? `g-${opt.groupId}` : opt.id}
+                key={opt.id}
                 onClick={() => selectSession(opt)}
                 className={`w-full px-3 py-2 flex items-center gap-2 text-left text-xs hover:bg-cam-surface/60 transition-colors ${
                   isActive
@@ -203,11 +164,6 @@ function ModernVariant() {
                 <StatusDot status={opt.status} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    {opt.isGroup && (
-                      <span className="text-[9px] px-1 rounded bg-cam-accent/20 text-cam-accent">
-                        GRUPO
-                      </span>
-                    )}
                     <span className="text-cam-text font-medium truncate">
                       {opt.label}
                     </span>
@@ -236,17 +192,12 @@ function PixelVariant() {
     setIsOpen,
     selectSession,
     currentId,
-    currentGroupId,
   } = useSessionOptions();
   const ref = useRef<HTMLDivElement>(null);
   useClickOutside(ref, () => setIsOpen(false));
 
   const currentLabel =
-    options.find(
-      (o) =>
-        (o.isGroup && o.groupId === currentGroupId) ||
-        (!o.isGroup && o.id === currentId && !currentGroupId),
-    )?.label ?? "---";
+    options.find((o) => o.id === currentId)?.label ?? "---";
 
   return (
     <div ref={ref} className="relative">
@@ -272,12 +223,10 @@ function PixelVariant() {
           }}
         >
           {options.map((opt) => {
-            const isActive =
-              (opt.isGroup && opt.groupId === currentGroupId) ||
-              (!opt.isGroup && opt.id === currentId && !currentGroupId);
+            const isActive = opt.id === currentId;
             return (
               <button
-                key={opt.isGroup ? `g-${opt.groupId}` : opt.id}
+                key={opt.id}
                 onClick={() => selectSession(opt)}
                 className="w-full px-3 py-2 flex items-center gap-2 text-left pixel-text-xs"
                 style={{
@@ -301,16 +250,6 @@ function PixelVariant() {
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    {opt.isGroup && (
-                      <span
-                        style={{
-                          color: "var(--pixel-cyan)",
-                          fontSize: "9px",
-                        }}
-                      >
-                        [GRUPO]
-                      </span>
-                    )}
                     <span className="truncate">{opt.label}</span>
                   </div>
                   <span
@@ -341,17 +280,12 @@ function TerminalVariant() {
     setIsOpen,
     selectSession,
     currentId,
-    currentGroupId,
   } = useSessionOptions();
   const ref = useRef<HTMLDivElement>(null);
   useClickOutside(ref, () => setIsOpen(false));
 
   const currentLabel =
-    options.find(
-      (o) =>
-        (o.isGroup && o.groupId === currentGroupId) ||
-        (!o.isGroup && o.id === currentId && !currentGroupId),
-    )?.label ?? "none";
+    options.find((o) => o.id === currentId)?.label ?? "none";
 
   return (
     <div ref={ref} className="relative font-mono text-[11px]">
@@ -367,12 +301,10 @@ function TerminalVariant() {
       {isOpen && options.length > 0 && (
         <div className="absolute top-full mt-1 right-0 z-[100] w-72 max-h-64 overflow-y-auto bg-[#0d0d0d] border border-[#1a3a1a]">
           {options.map((opt) => {
-            const isActive =
-              (opt.isGroup && opt.groupId === currentGroupId) ||
-              (!opt.isGroup && opt.id === currentId && !currentGroupId);
+            const isActive = opt.id === currentId;
             return (
               <button
-                key={opt.isGroup ? `g-${opt.groupId}` : opt.id}
+                key={opt.id}
                 onClick={() => selectSession(opt)}
                 className={`w-full px-2 py-1 flex items-center gap-2 text-left border-b border-[#1a3a1a] hover:bg-[#0a1a0a] transition-colors ${
                   isActive ? "bg-[#0a1a0a]" : ""
@@ -401,7 +333,7 @@ function TerminalVariant() {
                         : "text-[#00aa00]"
                     }
                   >
-                    {opt.isGroup ? `<grp> ${opt.label}` : opt.label}
+                    {opt.label}
                   </span>
                   <span className="terminal-dim ml-1">{opt.sublabel}</span>
                 </div>

@@ -37,6 +37,19 @@ export function initDb(dbPath?: string): Database.Database {
     db.exec(`ALTER TABLE events ADD COLUMN causation_id TEXT`);
   } catch { /* column already exists */ }
 
+  // Sprint 8: Ensure project_registry table exists
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS project_registry (
+      working_directory TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      registered_at TEXT NOT NULL DEFAULT (datetime('now')),
+      prd_path TEXT,
+      hooks_installed INTEGER NOT NULL DEFAULT 0,
+      FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_project_registry_project ON project_registry(project_id);
+  `);
+
   return db;
 }
 

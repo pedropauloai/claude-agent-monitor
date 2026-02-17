@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import chalk from "chalk";
+import { existsSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { DEFAULT_SERVER_PORT } from "@cam/shared";
 import { logger } from "../utils/logger.js";
@@ -132,6 +133,39 @@ export const doctorCommand = new Command("doctor")
       ok: nodeOk,
       detail: nodeVersion,
       fix: "Install Node.js 18+ from https://nodejs.org",
+    });
+
+    // 7. Check project is registered
+    let registeredOk = false;
+    if (serverOnline) {
+      try {
+        const cwd = process.cwd();
+        const response = await fetch(
+          `http://localhost:${port}/api/registry/lookup?dir=${encodeURIComponent(cwd)}`,
+        );
+        registeredOk = response.ok;
+      } catch {
+        // Not registered
+      }
+    }
+    results.push({
+      label: "Project registered in CAM",
+      ok: registeredOk,
+      detail: registeredOk
+        ? "Current directory is registered"
+        : serverOnline
+          ? "Not registered"
+          : "Server not running (skipped)",
+      fix: "cam init",
+    });
+
+    // 8. Check PRD.md exists
+    const hasPrd = ["PRD.md", "prd.md", "PRD.MD"].some((f) => existsSync(f));
+    results.push({
+      label: "PRD.md found in project",
+      ok: hasPrd,
+      detail: hasPrd ? "Found" : "Not found (optional)",
+      fix: hasPrd ? undefined : "Create a PRD.md or run 'cam init --prd <path>'",
     });
 
     // Display results

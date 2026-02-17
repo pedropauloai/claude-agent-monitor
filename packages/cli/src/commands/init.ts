@@ -11,6 +11,8 @@ import {
   writeClaudeSettings,
   ensureClaudeDir,
   resolveFilePath,
+  readConfig,
+  writeConfig,
 } from "../utils/config.js";
 import {
   generateHooksConfig,
@@ -102,7 +104,7 @@ export const initCommand = new Command("init")
         );
       }
 
-      // Handle PRD import
+      // Handle PRD import (explicit --prd flag)
       if (options.prd) {
         logger.blank();
         const prdPath = resolveFilePath(options.prd);
@@ -137,7 +139,7 @@ export const initCommand = new Command("init")
 
           if (response.ok) {
             const data = (await response.json()) as {
-              project?: { name: string; totalTasks: number };
+              project?: { id: string; name: string; totalTasks: number };
             };
             if (data.project) {
               logger.success(
@@ -160,6 +162,155 @@ export const initCommand = new Command("init")
         }
       }
 
+      // === Project Registration (Sprint 8: Project-First Architecture) ===
+      logger.blank();
+      logger.section("Project Registration");
+
+      let projectId: string | null = null;
+      let serverAvailable = false;
+
+      // Check if server is running
+      try {
+        const healthRes = await fetch(
+          `http://localhost:${DEFAULT_SERVER_PORT}/api/health`,
+        );
+        serverAvailable = healthRes.ok;
+      } catch {
+        serverAvailable = false;
+      }
+
+      if (!serverAvailable) {
+        logger.info(
+          `Server not running. Start with ${chalk.cyan("'cam start'")} then re-run ${chalk.cyan("'cam init'")} to register this project.`,
+        );
+      } else {
+        // Step 1: Find or create project
+        const prdPath = options.prd
+          ? resolveFilePath(options.prd)
+          : findPrdFile();
+
+        if (prdPath && existsSync(prdPath)) {
+          // PRD found - import it (if not already imported via --prd flag above)
+          if (!options.prd) {
+            try {
+              const prdContent = readFileSync(prdPath, "utf-8");
+              logger.success(
+                `PRD found: ${chalk.cyan(prdPath)} (${prdContent.length} chars)`,
+              );
+
+              const response = await fetch(
+                `http://localhost:${DEFAULT_SERVER_PORT}/api/projects`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    name: extractProjectName(prdContent),
+                    prd_content: prdContent,
+                    parse_method: options.parse ?? "structured",
+                  }),
+                },
+              );
+
+              if (response.ok) {
+                const data = (await response.json()) as {
+                  project?: {
+                    id: string;
+                    name: string;
+                    totalTasks: number;
+                  };
+                };
+                if (data.project) {
+                  projectId = data.project.id;
+                  logger.success(
+                    `Project created: ${chalk.cyan(data.project.name)} (${data.project.totalTasks} tasks)`,
+                  );
+                }
+              }
+            } catch {
+              logger.warning("Failed to import PRD");
+            }
+          } else {
+            // --prd was provided, project was already created above
+            // Try to get the project ID from existing projects
+            try {
+              const projResponse = await fetch(
+                `http://localhost:${DEFAULT_SERVER_PORT}/api/projects`,
+              );
+              if (projResponse.ok) {
+                const projData = (await projResponse.json()) as {
+                  projects?: Array<{ id: string; name: string }>;
+                };
+                if (projData.projects && projData.projects.length > 0) {
+                  projectId = projData.projects[projData.projects.length - 1].id;
+                }
+              }
+            } catch {
+              // Could not fetch project list
+            }
+          }
+        } else if (!options.prd) {
+          // No PRD - create minimal project
+          try {
+            const projName = basename(process.cwd());
+            const response = await fetch(
+              `http://localhost:${DEFAULT_SERVER_PORT}/api/projects`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: projName, prd_content: "" }),
+              },
+            );
+
+            if (response.ok) {
+              const data = (await response.json()) as {
+                project?: { id: string; name: string };
+              };
+              if (data.project) {
+                projectId = data.project.id;
+                logger.success(
+                  `Project created: ${chalk.cyan(data.project.name)} (no PRD)`,
+                );
+              }
+            }
+          } catch {
+            logger.warning("Failed to create project");
+          }
+        }
+
+        // Step 2: Register working directory
+        if (projectId) {
+          try {
+            const regResponse = await fetch(
+              `http://localhost:${DEFAULT_SERVER_PORT}/api/registry`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  working_directory: process.cwd(),
+                  project_id: projectId,
+                  prd_path: prdPath || null,
+                }),
+              },
+            );
+
+            if (regResponse.ok) {
+              logger.success("Directory registered with CAM");
+            }
+          } catch {
+            logger.warning("Failed to register directory");
+          }
+
+          // Step 3: Save activeProjectId to local config
+          try {
+            const config = readConfig();
+            writeConfig({ ...config, activeProjectId: projectId });
+            logger.success("Project ID saved to config");
+          } catch {
+            // Config save failed silently
+          }
+        }
+      }
+
       // Test server connectivity
       logger.blank();
       try {
@@ -172,14 +323,24 @@ export const initCommand = new Command("init")
           );
         }
       } catch {
-        logger.info(
-          `Run ${chalk.cyan("'cam start'")} to launch the monitoring server.`,
-        );
+        if (!serverAvailable) {
+          logger.info(
+            `Run ${chalk.cyan("'cam start'")} to launch the monitoring server.`,
+          );
+        }
       }
 
       logger.blank();
     },
   );
+
+function findPrdFile(): string | null {
+  const candidates = ["PRD.md", "prd.md", "PRD.MD"];
+  for (const name of candidates) {
+    if (existsSync(name)) return name;
+  }
+  return null;
+}
 
 function extractProjectName(prdContent: string): string {
   // Try to extract project name from PRD heading

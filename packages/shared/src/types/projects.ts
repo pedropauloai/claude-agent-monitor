@@ -89,3 +89,11 @@ export interface PRDSection {
   taskIds: string[];
   completionPercent: number;
 }
+
+export interface ProjectRegistry {
+  workingDirectory: string;
+  projectId: string;
+  registeredAt: string;
+  prdPath?: string;
+  hooksInstalled: boolean;
+}

@@ -3,12 +3,11 @@ import { SSEClient } from "../lib/sse";
 import { useSessionStore } from "../stores/session-store";
 import { useProjectStore } from "../stores/project-store";
 import { useNotificationStore } from "../stores/notification-store";
-import * as api from "../lib/api";
 import type { AgentEvent, Agent } from "@cam/shared";
 
 export function useSSE(sessionId?: string) {
   const clientRef = useRef<SSEClient | null>(null);
-  const groupId = useSessionStore((s) => s.groupId);
+  const projectId = useSessionStore((s) => s.projectId);
   const {
     addEvent,
     addAgent,
@@ -16,19 +15,17 @@ export function useSSE(sessionId?: string) {
     setConnected,
     setConnectionStatus,
     setLastHeartbeat,
-    setAgents,
   } = useSessionStore();
   const { updateTask, updateActiveProject, updateActiveSprint } =
     useProjectStore();
 
   useEffect(() => {
-    // Need either a sessionId or groupId to connect
-    if (!sessionId && !groupId) return;
+    if (!sessionId) return;
 
     const client = new SSEClient({
       url: "/api/stream",
-      sessionId: groupId ? undefined : sessionId,
-      groupId: groupId ?? undefined,
+      sessionId,
+      projectId: projectId ?? undefined,
       onConnect: () => {
         setConnected(true);
         setConnectionStatus("connected");
@@ -171,34 +168,6 @@ export function useSSE(sessionId?: string) {
       onTeamCreated: () => {
         // Team created - could show notification in the future
       },
-      onSessionGroupCreated: (data: {
-        groupId: string;
-        mainSessionId: string;
-      }) => {
-        // A new session group was created - update groupId in store
-        useSessionStore.getState().setGroupId(data.groupId);
-      },
-      onSessionGroupMemberAdded: (data: {
-        groupId: string;
-        sessionId: string;
-        agentName?: string;
-      }) => {
-        // A new member joined the group - refresh agents list from the group
-        const currentGroupId = useSessionStore.getState().groupId;
-        if (currentGroupId) {
-          api
-            .fetchSessionGroupAgents(currentGroupId)
-            .then(({ agents }) => {
-              setAgents(agents);
-            })
-            .catch(() => {
-              // ignore fetch errors
-            });
-        }
-      },
-      onSessionGroupCompleted: () => {
-        // Group completed - the session_status event will handle UI updates
-      },
       onHeartbeat: (data: { timestamp: string }) => {
         setLastHeartbeat(data.timestamp);
       },
@@ -213,14 +182,13 @@ export function useSSE(sessionId?: string) {
     };
   }, [
     sessionId,
-    groupId,
+    projectId,
     addEvent,
     addAgent,
     updateAgent,
     setConnected,
     setConnectionStatus,
     setLastHeartbeat,
-    setAgents,
     updateTask,
     updateActiveProject,
     updateActiveSprint,
