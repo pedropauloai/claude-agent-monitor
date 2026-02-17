@@ -12,9 +12,9 @@ import { PixelBurndown } from "./PixelBurndown";
 import { PixelPRDOverview } from "./PixelPRDOverview";
 import { PixelDependencyGraph } from "./PixelDependencyGraph";
 import { PixelProjectSelector } from "./PixelProjectSelector";
-import { ThemeSwitcher } from "../../layout/ThemeSwitcher";
-import { ActivityWindowSelector } from "../../shared/ActivityWindowSelector";
 import { SessionPicker } from "../../shared/SessionPicker";
+import { useUIStore } from "../../../stores/ui-store.js";
+import { useSettingsStore } from "../../../stores/settings-store.js";
 import { AgentMap } from "../../agent-map/AgentMap";
 import { TaskDetailPanel } from "../../shared/TaskDetailPanel";
 import "./pixel.css";
@@ -64,7 +64,7 @@ export function PixelShell() {
 
   return (
     <div
-      className="pixel-theme h-screen w-screen flex flex-col overflow-hidden"
+      className="pixel-theme h-full w-full flex flex-col overflow-hidden"
       style={{ background: "var(--pixel-bg)" }}
     >
       {/* HUD Top Bar */}
@@ -83,10 +83,9 @@ export function PixelShell() {
         </div>
 
         <div className="flex items-center gap-3">
-          <ActivityWindowSelector />
           <SessionPicker />
           <PixelProjectSelector />
-          <ThemeSwitcher />
+          <PixelGearButton />
         </div>
       </header>
 
@@ -101,10 +100,42 @@ export function PixelShell() {
         {viewMode === "mission-control" && <MissionControlLayout />}
       </div>
 
-      {/* Bottom Timeline */}
-      <PixelTimeline />
+      {/* Bottom Timeline (conditional) */}
+      <PixelConditionalTimeline />
     </div>
   );
+}
+
+function PixelGearButton() {
+  const openSettings = useUIStore((s) => s.openSettings);
+
+  return (
+    <button
+      onClick={openSettings}
+      className="pixel-text-xs px-2 py-1 transition-colors"
+      style={{
+        color: 'var(--pixel-text-muted)',
+        border: '2px solid var(--pixel-border)',
+      }}
+      title="Configurações (Ctrl+,)"
+      onMouseEnter={(e) => {
+        (e.target as HTMLElement).style.color = 'var(--pixel-gold)';
+        (e.target as HTMLElement).style.borderColor = 'var(--pixel-gold)';
+      }}
+      onMouseLeave={(e) => {
+        (e.target as HTMLElement).style.color = 'var(--pixel-text-muted)';
+        (e.target as HTMLElement).style.borderColor = 'var(--pixel-border)';
+      }}
+    >
+      [CFG]
+    </button>
+  );
+}
+
+function PixelConditionalTimeline() {
+  const showTimeline = useSettingsStore((s) => s.showTimeline);
+  if (!showTimeline) return null;
+  return <PixelTimeline />;
 }
 
 function MapLayout() {

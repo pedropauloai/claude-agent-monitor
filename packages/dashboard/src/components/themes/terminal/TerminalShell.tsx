@@ -12,9 +12,9 @@ import { TerminalBurndown } from "./TerminalBurndown";
 import { TerminalPRDOverview } from "./TerminalPRDOverview";
 import { TerminalDependencyGraph } from "./TerminalDependencyGraph";
 import { TerminalProjectSelector } from "./TerminalProjectSelector";
-import { ThemeSwitcher } from "../../layout/ThemeSwitcher";
-import { ActivityWindowSelector } from "../../shared/ActivityWindowSelector";
 import { SessionPicker } from "../../shared/SessionPicker";
+import { useUIStore } from "../../../stores/ui-store.js";
+import { useSettingsStore } from "../../../stores/settings-store.js";
 import { AgentMap } from "../../agent-map/AgentMap";
 import { TaskDetailPanel } from "../../shared/TaskDetailPanel";
 import "./terminal.css";
@@ -61,7 +61,7 @@ export function TerminalShell() {
   const { viewMode } = useProjectStore();
 
   return (
-    <div className="h-screen w-screen flex flex-col terminal-bg terminal-boot overflow-hidden">
+    <div className="h-full w-full flex flex-col terminal-bg terminal-boot overflow-hidden">
       {/* Top Bar - terminal header */}
       <header className="h-10 flex items-center justify-between px-3 border-b border-[#1a3a1a] bg-[#0d0d0d] shrink-0 font-mono text-[11px] relative z-50">
         <div className="flex items-center gap-3">
@@ -74,10 +74,9 @@ export function TerminalShell() {
         </div>
 
         <div className="flex items-center gap-3">
-          <ActivityWindowSelector />
           <SessionPicker />
           <TerminalProjectSelector />
-          <ThemeSwitcher />
+          <TerminalGearButton />
         </div>
       </header>
 
@@ -92,10 +91,30 @@ export function TerminalShell() {
         {viewMode === "mission-control" && <MissionControlLayout />}
       </div>
 
-      {/* Bottom Timeline */}
-      <TerminalTimeline />
+      {/* Bottom Timeline (conditional) */}
+      <TerminalConditionalTimeline />
     </div>
   );
+}
+
+function TerminalGearButton() {
+  const openSettings = useUIStore((s) => s.openSettings);
+
+  return (
+    <button
+      onClick={openSettings}
+      className="font-mono text-[11px] terminal-muted hover:text-[#00ff00] hover:terminal-glow transition-colors"
+      title="Configurações (Ctrl+,)"
+    >
+      [CONFIG]
+    </button>
+  );
+}
+
+function TerminalConditionalTimeline() {
+  const showTimeline = useSettingsStore((s) => s.showTimeline);
+  if (!showTimeline) return null;
+  return <TerminalTimeline />;
 }
 
 function MapLayout() {
