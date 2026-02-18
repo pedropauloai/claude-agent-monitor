@@ -78,7 +78,7 @@ function tryParseJson(str: string): Record<string, unknown> | null {
  * Format event input into a human-readable summary based on tool type.
  *
  * Instead of showing raw JSON like {"file_path":"C:\\Users\\...","old_string":"..."},
- * shows a friendly description like "Editando arquivo: schema.sql"
+ * shows a friendly description like "Editing file: schema.sql"
  */
 export function formatEventInput(tool: string | undefined, rawInput: string): string {
   if (!rawInput) return '';
@@ -93,14 +93,14 @@ export function formatEventInput(tool: string | undefined, rawInput: string): st
         if (filePath) {
           const fname = extractFilenameFromPath(filePath);
           const preview = oldStr ? ` | "${truncateText(oldStr, 60)}"` : '';
-          return `Editando arquivo: ${fname}${preview}`;
+          return `Editing file: ${fname}${preview}`;
         }
         break;
       }
       case 'Write': {
         const filePath = parsed['file_path'] as string | undefined;
         if (filePath) {
-          return `Criando arquivo: ${extractFilenameFromPath(filePath)}`;
+          return `Creating file: ${extractFilenameFromPath(filePath)}`;
         }
         break;
       }
@@ -113,18 +113,18 @@ export function formatEventInput(tool: string | undefined, rawInput: string): st
           let extra = '';
           if (offset || limit) {
             const parts: string[] = [];
-            if (offset) parts.push(`linha ${offset}`);
-            if (limit) parts.push(`${limit} linhas`);
+            if (offset) parts.push(`line ${offset}`);
+            if (limit) parts.push(`${limit} lines`);
             extra = ` (${parts.join(', ')})`;
           }
-          return `Lendo arquivo: ${fname}${extra}`;
+          return `Reading file: ${fname}${extra}`;
         }
         break;
       }
       case 'Bash': {
         const command = parsed['command'] as string | undefined;
         if (command) {
-          return `Comando: ${truncateText(command, 120)}`;
+          return `Command: ${truncateText(command, 120)}`;
         }
         break;
       }
@@ -132,15 +132,15 @@ export function formatEventInput(tool: string | undefined, rawInput: string): st
         const pattern = parsed['pattern'] as string | undefined;
         const path = parsed['path'] as string | undefined;
         if (pattern) {
-          const pathInfo = path ? ` em ${extractFilenameFromPath(path)}` : '';
-          return `Buscando: "${truncateText(pattern, 60)}"${pathInfo}`;
+          const pathInfo = path ? ` in ${extractFilenameFromPath(path)}` : '';
+          return `Searching: "${truncateText(pattern, 60)}"${pathInfo}`;
         }
         break;
       }
       case 'Glob': {
         const pattern = parsed['pattern'] as string | undefined;
         if (pattern) {
-          return `Buscando arquivos: ${pattern}`;
+          return `Searching files: ${pattern}`;
         }
         break;
       }
@@ -148,7 +148,7 @@ export function formatEventInput(tool: string | undefined, rawInput: string): st
       case 'TaskCreate': {
         const description = (parsed['description'] || parsed['subject'] || parsed['title']) as string | undefined;
         if (description) {
-          return `Delegando tarefa: ${truncateText(description, 100)}`;
+          return `Delegating task: ${truncateText(description, 100)}`;
         }
         break;
       }
@@ -157,28 +157,28 @@ export function formatEventInput(tool: string | undefined, rawInput: string): st
         const id = parsed['id'] as string | undefined;
         if (status) {
           const idInfo = id ? ` (${id.slice(0, 8)})` : '';
-          return `Atualizando tarefa${idInfo}: status -> ${status}`;
+          return `Updating task${idInfo}: status -> ${status}`;
         }
         break;
       }
       case 'SendMessage': {
         const text = parsed['text'] as string | undefined;
         if (text) {
-          return `Mensagem: "${truncateText(text, 100)}"`;
+          return `Message: "${truncateText(text, 100)}"`;
         }
         break;
       }
       case 'WebFetch': {
         const url = parsed['url'] as string | undefined;
         if (url) {
-          return `Buscando URL: ${truncateText(url, 100)}`;
+          return `Fetching URL: ${truncateText(url, 100)}`;
         }
         break;
       }
       case 'WebSearch': {
         const query = parsed['query'] as string | undefined;
         if (query) {
-          return `Pesquisando: "${truncateText(query, 80)}"`;
+          return `Searching: "${truncateText(query, 80)}"`;
         }
         break;
       }

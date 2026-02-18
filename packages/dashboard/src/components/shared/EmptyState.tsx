@@ -23,28 +23,28 @@ function ModernEmptyState() {
           </div>
 
           <h2 className="text-xl font-semibold text-cam-text mb-2">
-            Aguardando conexao...
+            Waiting for connection...
           </h2>
           <p className="text-sm text-cam-text-muted mb-8">
             {connectionStatus === "connected"
-              ? "Servidor conectado. Inicie o Claude Code em outro terminal para ver a atividade."
-              : "Nenhuma sessao ativa detectada. Siga os passos abaixo para comecar."}
+              ? "Server connected. Start Claude Code in another terminal to see activity."
+              : "No active session detected. Follow the steps below to get started."}
           </p>
 
           <div className="text-left space-y-4">
-            <Step number={1} title="Configure os hooks no seu projeto">
+            <Step number={1} title="Configure hooks in your project">
               <code className="text-xs bg-cam-surface-2 px-2 py-1 rounded text-cam-accent font-mono">
                 cam init
               </code>
             </Step>
-            <Step number={2} title="Inicie o Claude Code em outro terminal">
+            <Step number={2} title="Start Claude Code in another terminal">
               <code className="text-xs bg-cam-surface-2 px-2 py-1 rounded text-cam-accent font-mono">
-                claude &quot;sua tarefa aqui&quot;
+                claude &quot;your task here&quot;
               </code>
             </Step>
-            <Step number={3} title="Observe os agentes trabalhando">
+            <Step number={3} title="Watch agents working">
               <span className="text-xs text-cam-text-muted">
-                Os eventos aparecerao automaticamente no dashboard.
+                Events will appear automatically on the dashboard.
               </span>
             </Step>
           </div>
@@ -53,7 +53,7 @@ function ModernEmptyState() {
             <div className="mt-6 flex items-center justify-center gap-2">
               <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
               <span className="text-xs text-amber-400">
-                Reconectando ao servidor...
+                Reconnecting to server...
               </span>
             </div>
           )}
@@ -114,15 +114,15 @@ function PixelEmptyState() {
             className="pixel-text-lg mb-2"
             style={{ color: "var(--pixel-gold)", fontSize: "24px" }}
           >
-            {"> AGUARDANDO CONEXAO..."}
+            {"> WAITING FOR CONNECTION..."}
           </div>
           <p
             className="pixel-text-xs mb-8"
             style={{ color: "var(--pixel-text-muted)" }}
           >
             {connectionStatus === "connected"
-              ? "SERVIDOR ONLINE. INICIE O CLAUDE CODE EM OUTRO TERMINAL."
-              : "NENHUMA SESSAO ATIVA. SIGA OS PASSOS ABAIXO."}
+              ? "SERVER ONLINE. START CLAUDE CODE IN ANOTHER TERMINAL."
+              : "NO ACTIVE SESSION. FOLLOW THE STEPS BELOW."}
           </p>
 
           <div
@@ -144,19 +144,19 @@ function PixelEmptyState() {
               className="pixel-text-xs"
               style={{ color: "var(--pixel-green)" }}
             >
-              {"[1] Rodar: cam init"}
+              {"[1] Run: cam init"}
             </div>
             <div
               className="pixel-text-xs"
               style={{ color: "var(--pixel-green)" }}
             >
-              {'[2] Rodar: claude "sua tarefa"'}
+              {'[2] Run: claude "your task"'}
             </div>
             <div
               className="pixel-text-xs"
               style={{ color: "var(--pixel-green)" }}
             >
-              {"[3] Observar agentes no dashboard"}
+              {"[3] Watch agents on dashboard"}
             </div>
           </div>
 
@@ -166,7 +166,7 @@ function PixelEmptyState() {
                 className="pixel-text-xs pixel-pulse"
                 style={{ color: "var(--pixel-gold)" }}
               >
-                {"RECONECTANDO..."}
+                {"RECONNECTING..."}
               </span>
             </div>
           )}
@@ -198,32 +198,32 @@ function TerminalEmptyState() {
           </div>
           <div className="text-[#00aa00] mb-1">
             {connectionStatus === "connected"
-              ? "[OK] Servidor conectado na porta 7890"
-              : "[..] Aguardando conexao com o servidor..."}
+              ? "[OK] Server connected on port 7890"
+              : "[..] Waiting for server connection..."}
           </div>
           <div className="text-[#ffaa00] mb-6">
-            [!!] Nenhuma sessao ativa detectada
+            [!!] No active session detected
           </div>
 
           <div className="border border-[#1a3a1a] p-3 mb-4">
-            <div className="text-[#00ff00] mb-2">{"# Para comecar:"}</div>
+            <div className="text-[#00ff00] mb-2">{"# Getting started:"}</div>
             <div className="text-[#00aa00] space-y-1">
               <div>
                 <span className="text-[#555]">1.</span>{" "}
                 <span className="text-[#00ff00]">$ cam init</span>
-                <span className="text-[#555]"> {"#"} configura hooks</span>
+                <span className="text-[#555]"> {"#"} configure hooks</span>
               </div>
               <div>
                 <span className="text-[#555]">2.</span>{" "}
                 <span className="text-[#00ff00]">
-                  $ claude &quot;sua tarefa&quot;
+                  $ claude &quot;your task&quot;
                 </span>
-                <span className="text-[#555]"> {"#"} em outro terminal</span>
+                <span className="text-[#555]"> {"#"} in another terminal</span>
               </div>
               <div>
                 <span className="text-[#555]">3.</span>{" "}
                 <span className="text-[#00aa00]">
-                  Eventos aparecem automaticamente
+                  Events appear automatically
                 </span>
               </div>
             </div>
@@ -231,7 +231,7 @@ function TerminalEmptyState() {
 
           {connectionStatus === "reconnecting" && (
             <div className="text-[#ffaa00] animate-pulse">
-              [..] Tentando reconectar ao servidor...
+              [..] Trying to reconnect to server...
             </div>
           )}
 

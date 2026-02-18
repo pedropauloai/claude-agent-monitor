@@ -4,20 +4,20 @@ import type { ThemeName, SpriteResolution } from '../../stores/settings-store.js
 import { SpritePreview } from './SpritePreview.js';
 
 const THEME_OPTIONS: { value: ThemeName; label: string; description: string }[] = [
-  { value: 'modern', label: 'Modern', description: 'Interface limpa e minimalista' },
-  { value: 'pixel', label: 'Pixel', description: 'Estilo retro pixel art' },
-  { value: 'terminal', label: 'Terminal', description: 'Estilo console hacker' },
+  { value: 'modern', label: 'Modern', description: 'Clean and minimalist interface' },
+  { value: 'pixel', label: 'Pixel', description: 'Retro pixel art style' },
+  { value: 'terminal', label: 'Terminal', description: 'Hacker console style' },
 ];
 
 const PRESET_COLORS = [
-  { value: '#3b82f6', label: 'Azul' },
-  { value: '#ef4444', label: 'Vermelho' },
-  { value: '#22c55e', label: 'Verde' },
-  { value: '#f59e0b', label: 'Ambar' },
-  { value: '#8b5cf6', label: 'Roxo' },
-  { value: '#ec4899', label: 'Rosa' },
-  { value: '#06b6d4', label: 'Ciano' },
-  { value: '#f97316', label: 'Laranja' },
+  { value: '#3b82f6', label: 'Blue' },
+  { value: '#ef4444', label: 'Red' },
+  { value: '#22c55e', label: 'Green' },
+  { value: '#f59e0b', label: 'Amber' },
+  { value: '#8b5cf6', label: 'Purple' },
+  { value: '#ec4899', label: 'Pink' },
+  { value: '#06b6d4', label: 'Cyan' },
+  { value: '#f97316', label: 'Orange' },
 ];
 
 const SPRITE_OPTIONS: { value: SpriteResolution; label: string; description: string }[] = [
@@ -67,9 +67,9 @@ export function AppearanceTab() {
 
   return (
     <div className="space-y-6">
-      {/* Tema */}
+      {/* Theme */}
       <section>
-        <h3 className="text-sm font-medium text-cam-text mb-3">Tema</h3>
+        <h3 className="text-sm font-medium text-cam-text mb-3">Theme</h3>
         <div className="grid grid-cols-3 gap-2">
           {THEME_OPTIONS.map((option) => (
             <button
@@ -110,9 +110,9 @@ export function AppearanceTab() {
         </div>
       </section>
 
-      {/* Cor de destaque */}
+      {/* Accent color */}
       <section>
-        <h3 className="text-sm font-medium text-cam-text mb-3">Cor de destaque</h3>
+        <h3 className="text-sm font-medium text-cam-text mb-3">Accent color</h3>
         <div className="flex flex-wrap gap-2 mb-3">
           {PRESET_COLORS.map((color) => (
             <button
@@ -125,14 +125,14 @@ export function AppearanceTab() {
               }`}
               style={{ backgroundColor: color.value }}
               title={color.label}
-              aria-label={`Cor ${color.label}`}
+              aria-label={`Color ${color.label}`}
             />
           ))}
         </div>
 
         {/* Custom color input */}
         <div className="flex items-center gap-2">
-          <label className="text-xs text-cam-text-muted shrink-0">Cor personalizada:</label>
+          <label className="text-xs text-cam-text-muted shrink-0">Custom color:</label>
           <div className="relative flex-1">
             <input
               type="text"
@@ -156,14 +156,14 @@ export function AppearanceTab() {
         </div>
         {colorError && (
           <p className="text-[10px] text-cam-error mt-1">
-            Formato invalido. Use #RRGGBB (ex: #ff5500)
+            Invalid format. Use #RRGGBB (e.g. #ff5500)
           </p>
         )}
       </section>
 
-      {/* Resolucao de Sprites */}
+      {/* Sprite Resolution */}
       <section>
-        <h3 className="text-sm font-medium text-cam-text mb-3">Resolucao de Sprites</h3>
+        <h3 className="text-sm font-medium text-cam-text mb-3">Sprite Resolution</h3>
         <div className="grid grid-cols-2 gap-2">
           {SPRITE_OPTIONS.map((option) => (
             <button

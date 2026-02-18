@@ -10,10 +10,15 @@ export function useAgents() {
 
     const load = async () => {
       try {
+        // Try project-wide agents first, fall back to session agents
         if (projectId) {
           const { agents: data } = await api.getProjectAgents(projectId);
-          setAgents(data);
-        } else if (session?.id) {
+          if (data.length > 0 || !session?.id) {
+            setAgents(data);
+            return;
+          }
+        }
+        if (session?.id) {
           const { agents: data } = await api.getAgents(session.id);
           setAgents(data);
         }

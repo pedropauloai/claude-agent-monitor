@@ -24,21 +24,33 @@ export function ModernStatsBar() {
   const totalToolCalls = agents.reduce((sum, a) => sum + a.toolCallCount, 0);
   const fileEvents = events.filter((e) => e.category === "file_change").length;
 
+  const isSessionEnded = session?.status === 'completed' || session?.status === 'error';
+
   const stats = [
-    { label: "Session Duration", value: elapsed, accent: false },
+    ...(isSessionEnded ? [{
+      label: session?.status === 'error' ? "Ended (error)" : "Ended",
+      value: session?.endedAt
+        ? new Date(session.endedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+        : '--:--',
+      accent: false,
+      isEnded: true,
+    }] : []),
+    { label: "Session Duration", value: elapsed, accent: false, isEnded: false },
     {
       label: "Agents",
       value: `${activeAgents}/${agents.length}`,
       accent: activeAgents > 0,
+      isEnded: false,
     },
-    { label: "Tool Calls", value: formatNumber(totalToolCalls), accent: false },
+    { label: "Tool Calls", value: formatNumber(totalToolCalls), accent: false, isEnded: false },
     {
       label: "Events",
       value: formatNumber(session?.eventCount ?? 0),
       accent: false,
+      isEnded: false,
     },
-    { label: "Files", value: formatNumber(fileEvents), accent: false },
-    { label: "Errors", value: String(totalErrors), accent: totalErrors > 0 },
+    { label: "Files", value: formatNumber(fileEvents), accent: false, isEnded: false },
+    { label: "Errors", value: String(totalErrors), accent: totalErrors > 0, isEnded: false },
   ];
 
   return (
@@ -53,11 +65,13 @@ export function ModernStatsBar() {
           </span>
           <span
             className={`text-sm font-mono font-semibold ${
-              stat.label === "Errors" && totalErrors > 0
-                ? "text-cam-error"
-                : stat.accent
-                  ? "text-cam-success"
-                  : "text-cam-text"
+              stat.isEnded
+                ? "text-amber-400"
+                : stat.label === "Errors" && totalErrors > 0
+                  ? "text-cam-error"
+                  : stat.accent
+                    ? "text-cam-success"
+                    : "text-cam-text"
             }`}
           >
             {stat.value}

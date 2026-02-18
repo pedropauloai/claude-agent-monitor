@@ -275,6 +275,42 @@ function persistEvent(event: AgentEvent, now: string): void {
 
   sessionQueries.incrementEventCount().run(event.sessionId);
 
+  // Name session from first user prompt (UserPromptSubmit)
+  if (event.hookType === 'UserPromptSubmit' && event.input) {
+    const currentSession = sessionQueries.getById().get(event.sessionId) as Record<string, unknown> | undefined;
+    const currentMeta = currentSession?.['metadata'] ? JSON.parse(currentSession['metadata'] as string) : {};
+    if (!currentMeta.name) {
+      let rawText = typeof event.input === 'string' ? event.input : JSON.stringify(event.input);
+      // Extract prompt from JSON wrapper: {"prompt": "actual text"}
+      try {
+        const parsed = JSON.parse(rawText);
+        if (parsed && typeof parsed.prompt === 'string') rawText = parsed.prompt;
+        else if (parsed && typeof parsed.message === 'string') rawText = parsed.message;
+        else if (parsed && parsed.message?.content) rawText = parsed.message.content;
+      } catch { /* not JSON, use raw */ }
+      // Strip system tags (<system-reminder>, <task-notification>, etc.)
+      const cleaned = rawText
+        .replace(/<[^>]+>[\s\S]*?<\/[^>]+>/g, '')  // remove XML-like tags with content
+        .replace(/<[^>]+>/g, '')                     // remove self-closing tags
+        .replace(/^[\s#*\->`]+/, '')                 // leading markdown
+        .replace(/[\r\n]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      // Extract short summary (max 30 chars at word boundary)
+      const words = cleaned.split(' ');
+      let sessionName = '';
+      for (const word of words) {
+        const candidate = sessionName ? `${sessionName} ${word}` : word;
+        if (candidate.length > 30) break;
+        sessionName = candidate;
+      }
+      if (sessionName) {
+        currentMeta.name = sessionName;
+        sessionQueries.updateMetadata().run(JSON.stringify(currentMeta), event.sessionId);
+      }
+    }
+  }
+
   // Ensure agent exists
   const existingAgent = agentQueries
     .getById()

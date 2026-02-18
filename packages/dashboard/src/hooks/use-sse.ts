@@ -20,7 +20,12 @@ export function useSSE(sessionId?: string) {
     useProjectStore();
 
   useEffect(() => {
-    if (!sessionId) return;
+    const session = useSessionStore.getState().session;
+    // Don't connect SSE for completed or error sessions - no new events will arrive
+    if (!sessionId || (session && session.status !== 'active')) {
+      setConnectionStatus('disconnected');
+      return;
+    }
 
     const client = new SSEClient({
       url: "/api/stream",
@@ -55,7 +60,7 @@ export function useSSE(sessionId?: string) {
         if (data.status === "shutdown" || data.status === "completed") {
           useNotificationStore.getState().addToast({
             type: "info",
-            title: `Agente ${data.agent} finalizou`,
+            title: `Agent ${data.agent} finished`,
             duration: 4000,
           });
         }
@@ -76,15 +81,15 @@ export function useSSE(sessionId?: string) {
               type: data.status === "completed" ? "info" : "error",
               title:
                 data.status === "completed"
-                  ? "Sessao encerrada"
-                  : "Sessao encerrada com erro",
+                  ? "Session ended"
+                  : "Session ended with error",
               duration: 5000,
             });
           }
         } else if (data.status === "active") {
           useNotificationStore.getState().addToast({
             type: "success",
-            title: "Nova sessao iniciada",
+            title: "New session started",
             duration: 5000,
           });
         }
@@ -160,8 +165,8 @@ export function useSSE(sessionId?: string) {
         });
         useNotificationStore.getState().addToast({
           type: "success",
-          title: `Agente ${agentName} entrou`,
-          message: data.type ? `Tipo: ${data.type}` : undefined,
+          title: `Agent ${agentName} joined`,
+          message: data.type ? `Type: ${data.type}` : undefined,
           duration: 4000,
         });
       },

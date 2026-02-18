@@ -165,8 +165,9 @@ export const doctorCommand = new Command("doctor")
     results.push({
       label: "PRD.md found in project",
       ok: hasPrd,
-      detail: hasPrd ? "Found" : "Not found (optional)",
-      fix: hasPrd ? undefined : "Create a PRD.md or run 'cam init --prd <path>'",
+      detail: hasPrd ? "Found" : "Not found (optional - CAM works without it)",
+      fix: hasPrd ? undefined : "Optional: create a PRD.md or run 'cam init --prd <path>'",
+      warning: true,
     });
 
     // 9. Check tmux availability (warning only, not a failure)

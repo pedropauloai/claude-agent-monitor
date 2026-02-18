@@ -98,7 +98,7 @@ export function getShortSessionId(sessionId: string): string {
 
 /**
  * Format a session for display.
- * Returns a friendly label like "Sessao #1" or a timestamp-based label.
+ * Returns a friendly label like "Session #1" or a timestamp-based label.
  */
 export function formatSessionLabel(
   sessionId: string,
@@ -109,11 +109,11 @@ export function formatSessionLabel(
 
   if (startedAt) {
     const date = new Date(startedAt);
-    const time = date.toLocaleTimeString("pt-BR", {
+    const time = date.toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
     });
-    const day = date.toLocaleDateString("pt-BR", {
+    const day = date.toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
     });
@@ -126,7 +126,7 @@ export function formatSessionLabel(
   }
 
   return {
-    label: `Sessao #${index + 1}`,
+    label: `Session #${index + 1}`,
     subtitle,
     tooltip: sessionId,
   };

@@ -51,7 +51,7 @@ CAM was built for developers who use **Claude Code** (with Opus model) to build 
 | Pillar | What it answers | Data source |
 |--------|----------------|-------------|
 | **Agent Monitor** | "What is each agent doing RIGHT NOW?" | Real-time hooks |
-| **PRD Tracker** | "Where are we in the project? What's left?" | TaskCreate/TaskUpdate via hooks |
+| **Sprint Tracker** | "Where are we in the project? What's left?" | Sprint files + TaskCreate/TaskUpdate via hooks |
 
 ---
 
@@ -69,9 +69,8 @@ npm install -g claude-agent-monitor
 cd your-project
 cam init
 # CAM will:
-#   - Detect your PRD.md automatically (if present)
-#   - Parse it into sprints and tasks
 #   - Configure Claude Code hooks
+#   - Create docs/PRD/ and docs/SPRINTS/ with templates
 #   - Register the project for monitoring
 ```
 
@@ -89,21 +88,20 @@ claude "implement the auth module"
 
 That's it. Three commands and you have full observability.
 
-### Full Mission Control (with PRD Tracking)
+### Adding Sprint Tracking (optional)
 
-If you have a PRD file, CAM can track your entire project:
+Create sprint files to track tasks on the Kanban board:
 
 ```bash
-# Import your PRD during init
-cam init --prd ./PRD.md
+# Create a sprint file from the template
+cp docs/SPRINTS/TEMPLATE.md docs/SPRINTS/sprint-01.md
+# Edit sprint-01.md with your tasks
 
-# Review the extracted sprints and tasks, then confirm
-cam start
+# Import all sprint files at once
+cam sprint sync
 
-# Tell Claude to work through the PRD
-claude "read PRD.md and implement all Sprint 1 tasks"
-
-# Watch tasks move themselves across the Kanban board
+# Or import one at a time
+cam sprint import docs/SPRINTS/sprint-01.md
 ```
 
 ---
@@ -134,15 +132,13 @@ claude "read PRD.md and implement all Sprint 1 tasks"
 - **Agent detail view** -- Deep dive into any agent's tool history, files touched, errors, and current task
 - **Error tracking** -- Instant visibility into tool errors, rejected tool calls, and agent failures
 
-### Pillar 2 -- PRD Tracker
+### Pillar 2 -- Sprint Tracker
 
-- **PRD import and parsing** -- Feed in a markdown PRD and get structured tasks, sprints, and dependencies extracted automatically
+- **Sprint file import** -- Create markdown sprint files with tasks, import them with `cam sprint sync` or `cam sprint import`
 - **Auto-updating Kanban** -- Tasks move between columns on their own as agents call TaskCreate and TaskUpdate
 - **Sprint progress** -- Live progress bars, completion percentages, and velocity metrics for the active sprint
-- **Correlation Engine v2** -- 5-layer scoring pipeline that automatically matches agent events to PRD tasks (exact ID, tag similarity, file domain, title similarity, keyword overlap)
+- **Correlation Engine v2** -- 5-layer scoring pipeline that automatically matches agent events to tasks (exact ID, tag similarity, file domain, title similarity, keyword overlap)
 - **Burndown chart** -- Classic burndown with ideal vs actual lines, scope changes, and time-based projections
-- **Dependency graph** -- Interactive visualization of task dependencies with critical path and blocker detection
-- **PRD overview** -- Color-coded view of your entire PRD with per-section completion percentages
 - **Multi-project support** -- Monitor multiple projects from a single CAM dashboard with project sidebar and switcher
 
 ---
@@ -196,7 +192,7 @@ Retro RPG aesthetic with NES-era 16-color palette, pixel borders, Press Start 2P
 3. A configured **hook** fires and sends a tiny JSON payload to the CAM server
 4. The server stores it in SQLite and emits an **SSE event**
 5. The dashboard receives the event and updates the UI in **real-time**
-6. If PRD tracking is enabled, the **Correlation Engine** maps tool calls to PRD tasks automatically
+6. If sprint tracking is enabled, the **Correlation Engine** maps tool calls to sprint tasks automatically
 
 The hook binary is ultra-fast (< 10ms) and fails silently. It **never** blocks Claude Code, even if the CAM server is not running.
 
@@ -245,10 +241,10 @@ The hook binary is ultra-fast (< 10ms) and fails silently. It **never** blocks C
 | `GET` | `/api/sessions/:id/stats` | Aggregated metrics |
 | `GET` | `/api/stream` | SSE real-time stream |
 | `GET` | `/api/projects` | List projects |
-| `POST` | `/api/projects` | Create project from PRD |
+| `POST` | `/api/projects` | Create project |
 | `GET` | `/api/projects/:id/sprints` | List sprints |
 | `GET` | `/api/projects/:id/tasks` | List tasks with filters |
-| `POST` | `/api/parse-prd` | Parse PRD without creating project |
+| `GET` | `/api/registry/lookup` | Lookup project by working directory |
 
 ---
 
@@ -257,8 +253,7 @@ The hook binary is ultra-fast (< 10ms) and fails silently. It **never** blocks C
 ### Getting Started
 
 ```bash
-cam init                     # Register project + detect PRD + configure hooks
-cam init --prd ./PRD.md      # Register project with explicit PRD import
+cam init                     # Register project + configure hooks + scaffold templates
 cam start                    # Start server + dashboard (opens browser)
 cam status                   # Show registered projects, active sessions, health
 cam doctor                   # Diagnose common issues (hooks, server, project)
@@ -269,50 +264,29 @@ cam doctor                   # Diagnose common issues (hooks, server, project)
 ```bash
 cam start                    # Start server + dashboard (opens browser)
 cam start --port 8080        # Custom server port
-cam start --theme terminal   # Start with a specific theme
 cam start --no-open          # Don't auto-open browser
 cam sessions                 # List previous sessions
-cam sessions --clear         # Clear session history
 ```
 
-### Hooks
-
-```bash
-cam hooks --list             # Show configured hooks
-cam hooks --remove           # Remove CAM hooks (preserves others)
-cam hooks --test             # Send a test event to verify connectivity
-```
-
-### Projects and Sprints
+### Projects
 
 ```bash
 cam project list             # List all projects
 cam project show             # Show active project with stats
-cam project import PRD.md    # Import PRD into existing project
-cam project archive          # Archive current project
+cam project show <id>        # Show specific project (sets as active)
+cam project delete <id>      # Delete a project
+```
+
+### Sprints and Tasks
+
+```bash
 cam sprint list              # List sprints in active project
 cam sprint create "Sprint 2" # Create a new sprint
-cam sprint status            # Show sprint progress in terminal
+cam sprint import <file>     # Import tasks from a sprint markdown file
+cam sprint sync              # Import all sprint files from docs/SPRINTS/
 cam sprint activate <id>     # Set the active sprint
-```
-
-### Tasks and Progress
-
-```bash
 cam tasks                    # List tasks in active sprint
 cam tasks --all              # List all tasks in project
-cam tasks --blocked          # Show blocked tasks only
-cam tasks --agent researcher # Tasks assigned to a specific agent
-cam progress                 # Mini burndown in terminal
-cam progress --full          # Detailed progress report
-```
-
-### Theme
-
-```bash
-cam theme modern             # Switch to Modern theme
-cam theme terminal           # Switch to Terminal theme
-cam theme pixel              # Switch to Pixel Art theme
 ```
 
 ---
@@ -338,25 +312,35 @@ CAM captures the following Claude Code hook events:
 
 ## Recommended Workflow
 
-CAM is designed around a **Spec-Driven Development (SDD)** workflow:
+CAM provides **3 layers of value**, each optional and additive:
 
-### 1. Write your PRD
+1. **Observability** (always on) -- See what agents are doing in real-time
+2. **Sprint Tracking** (optional) -- Track tasks on the Kanban board
+3. **PRD** (optional) -- Define your project vision with a PRD document
 
-Create a `PRD.md` file that describes what you want to build. Structure it with sprints and tasks. CAM provides a recommended template.
-
-### 2. Initialize with CAM
+### 1. Initialize your project
 
 ```bash
 cd your-project
 cam init
 ```
 
-CAM detects your PRD, parses it into sprints and tasks, and sets up monitoring.
+CAM configures hooks, scaffolds `docs/PRD/` and `docs/SPRINTS/` with templates, and registers the project. You're immediately ready for agent monitoring.
+
+### 2. Define sprints (optional)
+
+Create sprint files from the template and import them:
+
+```bash
+cp docs/SPRINTS/TEMPLATE.md docs/SPRINTS/sprint-01.md
+# Edit sprint-01.md with your tasks
+cam sprint sync
+```
 
 ### 3. Let Claude Code build it
 
 ```bash
-claude "read PRD.md and implement Sprint 1 tasks"
+claude "implement Sprint 1 tasks"
 ```
 
 ### 4. Watch and learn
@@ -367,9 +351,9 @@ Open the CAM dashboard and observe:
 - How tasks move from "Planned" to "Completed"
 - When errors happen and how agents recover
 
-### 5. Evolve your PRD
+### 5. Add more sprints as you go
 
-As the project grows, add new sprints to your PRD. Run `cam project import PRD.md` to sync the new tasks. Your full project history is preserved.
+As the project grows, create new sprint files and run `cam sprint sync` to import them. The import is **idempotent** -- existing tasks are skipped, only new ones are added.
 
 This workflow has been battle-tested building CAM itself (dogfooding since day one).
 

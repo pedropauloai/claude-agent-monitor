@@ -65,10 +65,10 @@ export function ActivityFeedTab() {
         <ToggleSwitch
           checked={followMode}
           onChange={toggleFollowMode}
-          label="Auto-scroll para eventos recentes"
+          label="Auto-scroll to recent events"
         />
         <p className="text-[10px] text-cam-text-muted mt-1.5 ml-0.5">
-          Rola automaticamente o feed para mostrar novos eventos.
+          Automatically scrolls the feed to show new events.
         </p>
       </section>
 
@@ -77,20 +77,20 @@ export function ActivityFeedTab() {
         <ToggleSwitch
           checked={hidePolling}
           onChange={toggleHidePolling}
-          label="Esconder ferramentas repetitivas"
+          label="Hide repetitive tools"
         />
         <p className="text-[10px] text-cam-text-muted mt-1.5 ml-0.5">
-          Oculta eventos de ferramentas que fazem polling constante.
+          Hides events from tools that do constant polling.
         </p>
       </section>
 
       {/* Polling Tools List */}
       <section>
         <h3 className="text-sm font-medium text-cam-text mb-3">
-          Ferramentas de polling
+          Polling tools
         </h3>
         <p className="text-[10px] text-cam-text-muted mb-2">
-          Ferramentas que serao ocultadas quando "Esconder ferramentas repetitivas" estiver ativo.
+          Tools that will be hidden when "Hide repetitive tools" is active.
         </p>
 
         {/* Tags/chips */}
@@ -104,7 +104,7 @@ export function ActivityFeedTab() {
               <button
                 onClick={() => removePollingTool(tool)}
                 className="text-cam-text-muted hover:text-cam-error transition-colors ml-0.5"
-                aria-label={`Remover ${tool}`}
+                aria-label={`Remove ${tool}`}
               >
                 <svg
                   width="10"
@@ -123,7 +123,7 @@ export function ActivityFeedTab() {
           ))}
           {pollingTools.length === 0 && (
             <span className="text-[10px] text-cam-text-muted italic">
-              Nenhuma ferramenta configurada
+              No tools configured
             </span>
           )}
         </div>
@@ -135,7 +135,7 @@ export function ActivityFeedTab() {
             value={newTool}
             onChange={(e) => setNewTool(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Nome da ferramenta..."
+            placeholder="Tool name..."
             className="flex-1 px-3 py-1.5 text-xs rounded-md border border-cam-border bg-cam-surface-2 text-cam-text placeholder:text-cam-text-muted focus:outline-none focus:ring-1 focus:ring-cam-accent"
           />
           <button
@@ -143,7 +143,7 @@ export function ActivityFeedTab() {
             disabled={newTool.trim() === ''}
             className="px-3 py-1.5 text-xs font-medium rounded-md bg-cam-accent text-white hover:bg-cam-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors shrink-0"
           >
-            Adicionar
+            Add
           </button>
         </div>
       </section>

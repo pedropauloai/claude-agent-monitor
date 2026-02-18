@@ -24,22 +24,22 @@ function TerminalConnectionIndicator() {
   const config = {
     connected: {
       className: "text-[#00ff00] terminal-glow",
-      label: "[CONECTADO]",
-      sublabel: "capturando eventos",
+      label: "[CONNECTED]",
+      sublabel: "capturing events",
       sublabelClass: "text-[#00aa00]",
       showCursor: true,
     },
     reconnecting: {
       className: "text-[#ffaa00]",
-      label: "[RECONECTANDO...]",
+      label: "[RECONNECTING...]",
       sublabel: "",
       sublabelClass: "",
       showCursor: false,
     },
     disconnected: {
       className: "terminal-error",
-      label: "[DESCONECTADO]",
-      sublabel: "aguardando server",
+      label: "[DISCONNECTED]",
+      sublabel: "waiting for server",
       sublabelClass: "terminal-error",
       showCursor: false,
     },

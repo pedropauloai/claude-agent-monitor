@@ -20,10 +20,10 @@ interface TabConfig {
 }
 
 const TABS: TabConfig[] = [
-  { id: 'appearance', label: 'Aparencia' },
+  { id: 'appearance', label: 'Appearance' },
   { id: 'agent-map', label: 'Agent Map' },
   { id: 'activity-feed', label: 'Activity Feed' },
-  { id: 'advanced', label: 'Avancado' },
+  { id: 'advanced', label: 'Advanced' },
 ];
 
 const overlayVariants = {
@@ -113,13 +113,13 @@ function getTitleElement(theme: ThemeName): React.ReactNode {
     case 'pixel':
       return (
         <span style={{ fontSize: '8px', lineHeight: '14px', color: 'var(--pixel-gold, #ffd700)' }}>
-          CONFIGURACOES
+          SETTINGS
         </span>
       );
     case 'terminal':
       return (
         <span style={{ color: '#00ff00', textShadow: '0 0 4px rgba(0,255,0,0.4)', fontSize: '12px' }}>
-          {'> configuracoes'}
+          {'> settings'}
           <span style={{ animation: 'terminal-cursor-blink 0.6s step-end infinite', color: '#00ff00' }}>{'\u2588'}</span>
         </span>
       );
@@ -127,7 +127,7 @@ function getTitleElement(theme: ThemeName): React.ReactNode {
     default:
       return (
         <span className="text-base font-semibold text-cam-text">
-          Configuracoes
+          Settings
         </span>
       );
   }
@@ -323,7 +323,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 onClick={onClose}
                 className={getCloseButtonClasses(theme)}
                 style={getCloseButtonStyle(theme)}
-                aria-label="Fechar"
+                aria-label="Close"
               >
                 {theme === 'terminal' ? (
                   <span style={{ fontSize: '12px' }}>[X]</span>

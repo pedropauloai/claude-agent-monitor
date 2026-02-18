@@ -21,26 +21,39 @@ import { InProcessWarning } from "../../shared/InProcessWarning.js";
 import "./modern.css";
 
 function ConnectionIndicator() {
-  const { connectionStatus } = useSessionStore();
+  const { connectionStatus, session } = useSessionStore();
+
+  // If session is completed/error, show session status instead of connection status
+  if (session && session.status !== 'active') {
+    const isError = session.status === 'error';
+    return (
+      <div className="flex items-center gap-1.5">
+        <div className={`w-2 h-2 rounded-full ${isError ? 'bg-cam-error' : 'bg-gray-400'}`} />
+        <span className={`text-xs ${isError ? 'text-cam-error' : 'text-cam-text-muted'}`}>
+          {isError ? 'Session error' : 'Session ended'}
+        </span>
+      </div>
+    );
+  }
 
   const config = {
     connected: {
       dotClass: "bg-cam-success animate-pulse-dot",
       textClass: "text-cam-success",
-      label: "Conectado",
-      sublabel: "capturando eventos",
+      label: "Connected",
+      sublabel: "capturing events",
     },
     reconnecting: {
       dotClass: "bg-amber-400 animate-pulse",
       textClass: "text-amber-400",
-      label: "Reconectando...",
+      label: "Reconnecting...",
       sublabel: "",
     },
     disconnected: {
       dotClass: "bg-cam-error",
       textClass: "text-cam-error",
-      label: "Desconectado",
-      sublabel: "aguardando server",
+      label: "Disconnected",
+      sublabel: "waiting for server",
     },
   }[connectionStatus];
 

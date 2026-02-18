@@ -10,21 +10,21 @@ const ALL_POSES: AgentPose[] = [
 ];
 
 const POSE_LABELS: Record<AgentPose, string> = {
-  idle: 'Parado',
-  coding: 'Programando',
-  reading: 'Lendo',
+  idle: 'Idle',
+  coding: 'Coding',
+  reading: 'Reading',
   terminal: 'Terminal',
-  talking: 'Conversando',
-  searching: 'Buscando',
-  managing: 'Gerenciando',
-  celebrating: 'Celebrando',
+  talking: 'Talking',
+  searching: 'Searching',
+  managing: 'Managing',
+  celebrating: 'Celebrating',
 };
 
 const RESOLUTION_INFO: Record<SpriteResolution, { label: string; description: string }> = {
-  '16x16': { label: 'Classic 16x16', description: 'Estilo NES nostalgico' },
-  '24x24': { label: 'Detailed 24x24', description: 'Mais detalhes visiveis' },
-  '32x32': { label: 'HD 32x32', description: 'Alta definicao com expressoes' },
-  '48x48': { label: 'Ultra 48x48', description: 'Maximo detalhe e acessorios' },
+  '16x16': { label: 'Classic 16x16', description: 'Nostalgic NES style' },
+  '24x24': { label: 'Detailed 24x24', description: 'More visible details' },
+  '32x32': { label: 'HD 32x32', description: 'High definition with expressions' },
+  '48x48': { label: 'Ultra 48x48', description: 'Maximum detail and accessories' },
 };
 
 const PREVIEW_COLOR = '#3b82f6';

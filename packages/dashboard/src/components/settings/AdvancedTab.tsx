@@ -69,7 +69,7 @@ function NumberInput({
           onClick={decrement}
           disabled={value <= min}
           className="w-7 h-7 flex items-center justify-center rounded-md border border-cam-border bg-cam-surface-2 text-cam-text-secondary hover:text-cam-text hover:bg-cam-surface-3 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm font-mono"
-          aria-label="Diminuir"
+          aria-label="Decrease"
         >
           -
         </button>
@@ -85,7 +85,7 @@ function NumberInput({
           onClick={increment}
           disabled={value >= max}
           className="w-7 h-7 flex items-center justify-center rounded-md border border-cam-border bg-cam-surface-2 text-cam-text-secondary hover:text-cam-text hover:bg-cam-surface-3 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm font-mono"
-          aria-label="Aumentar"
+          aria-label="Increase"
         >
           +
         </button>
@@ -115,7 +115,7 @@ export function AdvancedTab() {
 
   const handleReset = () => {
     const confirmed = window.confirm(
-      'Tem certeza que deseja restaurar todas as configuracoes para os valores padrao?'
+      'Are you sure you want to restore all settings to default values?'
     );
     if (!confirmed) return;
 
@@ -133,11 +133,11 @@ export function AdvancedTab() {
           onChange={setMaxEvents}
           min={100}
           max={10000}
-          label="Maximo de eventos em memoria"
-          suffix="eventos"
+          label="Maximum events in memory"
+          suffix="events"
         />
         <p className="text-[10px] text-cam-text-muted mt-1">
-          Quantidade maxima de eventos mantidos no dashboard. Valores altos usam mais memoria.
+          Maximum number of events kept in the dashboard. Higher values use more memory.
         </p>
       </section>
 
@@ -148,11 +148,11 @@ export function AdvancedTab() {
           onChange={setSpeechBubbleTimeout}
           min={1}
           max={30}
-          label="Timeout dos baloes de fala"
-          suffix="segundos"
+          label="Speech bubble timeout"
+          suffix="seconds"
         />
         <p className="text-[10px] text-cam-text-muted mt-1">
-          Tempo que cada balao permanece visivel antes de desaparecer.
+          How long each speech bubble remains visible before disappearing.
         </p>
       </section>
 
@@ -163,10 +163,10 @@ export function AdvancedTab() {
           onChange={setMaxCommunicationLines}
           min={1}
           max={20}
-          label="Maximo de linhas de comunicacao"
+          label="Maximum communication lines"
         />
         <p className="text-[10px] text-cam-text-muted mt-1">
-          Quantidade maxima de linhas de interacao visiveis simultaneamente no Agent Map.
+          Maximum number of interaction lines visible simultaneously on the Agent Map.
         </p>
       </section>
 
@@ -175,10 +175,10 @@ export function AdvancedTab() {
         <ToggleSwitch
           checked={lockPanels}
           onChange={toggleLockPanels}
-          label="Travar redimensionamento de paineis"
+          label="Lock panel resizing"
         />
         <p className="text-[10px] text-cam-text-muted mt-1.5 ml-0.5">
-          Impede o redimensionamento acidental dos paineis do dashboard.
+          Prevents accidental resizing of dashboard panels.
         </p>
       </section>
 
@@ -186,21 +186,21 @@ export function AdvancedTab() {
       <section className="pt-2 border-t border-cam-border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-cam-text">Restaurar Padroes</h3>
+            <h3 className="text-sm font-medium text-cam-text">Restore Defaults</h3>
             <p className="text-[10px] text-cam-text-muted mt-0.5">
-              Redefine todas as configuracoes para os valores originais.
+              Resets all settings to their original values.
             </p>
           </div>
           <button
             onClick={handleReset}
             className="px-3 py-1.5 text-xs font-medium rounded-md border border-cam-error/50 text-cam-error hover:bg-cam-error/10 transition-colors shrink-0"
           >
-            Restaurar Padroes
+            Restore Defaults
           </button>
         </div>
         {showResetSuccess && (
           <div className="mt-2 px-3 py-1.5 text-[11px] text-cam-success bg-cam-success/10 border border-cam-success/30 rounded-md">
-            Configuracoes restauradas com sucesso!
+            Settings restored successfully!
           </div>
         )}
       </section>

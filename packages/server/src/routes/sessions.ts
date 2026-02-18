@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { DEFAULT_SESSION_LIMIT } from '@cam/shared';
-import { listSessions, getSession, deleteSession, getSessionWithDetails } from '../services/session-manager.js';
+import { listSessions, getSession, deleteSession, getSessionWithDetails, listSessionsByProject } from '../services/session-manager.js';
 
 export const sessionsRouter = Router();
 
@@ -9,10 +9,16 @@ export const sessionsRouter = Router();
 sessionsRouter.get('/', (req: Request, res: Response) => {
   try {
     const status = req.query['status'] as string | undefined;
+    const projectId = req.query['project_id'] as string | undefined;
     const limit = parseInt(req.query['limit'] as string) || DEFAULT_SESSION_LIMIT;
     const offset = parseInt(req.query['offset'] as string) || 0;
 
-    const sessions = listSessions({ status, limit, offset });
+    let sessions;
+    if (projectId) {
+      sessions = listSessionsByProject(projectId, { limit, offset });
+    } else {
+      sessions = listSessions({ status, limit, offset });
+    }
     res.json({ sessions });
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });

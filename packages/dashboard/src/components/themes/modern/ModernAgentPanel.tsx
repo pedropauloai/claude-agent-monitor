@@ -29,7 +29,12 @@ export function ModernAgentPanel() {
         inactive.push(agent);
       }
     }
-    return { activeAgents: active, inactiveAgents: inactive };
+    // Sort inactive by most recent activity, limit to 5
+    inactive.sort((a, b) =>
+      new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime()
+    );
+    const limitedInactive = inactive.slice(0, 5);
+    return { activeAgents: active, inactiveAgents: limitedInactive };
   }, [agents]);
 
   if (agents.length === 0) {
@@ -94,7 +99,7 @@ export function ModernAgentPanel() {
             className="w-full flex items-center justify-between px-2 py-1.5 rounded-md hover:bg-cam-surface-2 transition-colors group"
           >
             <span className="text-[10px] uppercase tracking-wider text-cam-text-muted font-medium">
-              Inactive
+              Recent inactive
             </span>
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] bg-cam-surface-2 text-cam-text-muted px-1.5 py-0.5 rounded-full font-medium">
@@ -151,7 +156,7 @@ function AgentCard({
     return (
       <button
         onClick={onSelect}
-        title={`${agent.name} (${agent.id})`}
+        title={`${displayName} | ${agent.type} | ${agent.id}`}
         className={`
           w-full text-left rounded-md px-2 py-1.5 transition-all duration-150
           ${
@@ -165,11 +170,8 @@ function AgentCard({
           <div
             className={`w-1.5 h-1.5 rounded-full shrink-0 ${getStatusDotColor(agent.status)}`}
           />
-          <span className="text-[11px] text-cam-text-muted truncate">
+          <span className="text-[11px] text-cam-text-muted truncate flex-1">
             {displayName}
-          </span>
-          <span className="text-[9px] px-1 py-0.5 rounded bg-cam-surface-3 text-cam-text-muted shrink-0">
-            {agent.type}
           </span>
           <span className="text-[9px] text-cam-text-muted shrink-0">
             {agent.toolCallCount}c
@@ -185,7 +187,7 @@ function AgentCard({
   return (
     <button
       onClick={onSelect}
-      title={`${agent.name} (${agent.id})`}
+      title={`${displayName} | ${agent.type} | ${agent.id}`}
       className={`
         w-full text-left rounded-lg p-2.5 transition-all duration-150
         ${
@@ -214,9 +216,6 @@ function AgentCard({
             />
             <span className="text-xs font-medium text-cam-text truncate">
               {displayName}
-            </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-cam-surface-3 text-cam-text-muted shrink-0">
-              {agent.type}
             </span>
           </div>
 

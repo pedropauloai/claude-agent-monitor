@@ -215,7 +215,7 @@ export function getAgentPose(
 }
 
 /**
- * Generate an educational/didactic description in Portuguese (BR) for what an agent is doing.
+ * Generate an educational/didactic description for what an agent is doing.
  * Aimed at beginners learning about software development.
  * Explains WHAT the tool does and WHY it's being used.
  */
@@ -227,13 +227,13 @@ export function generateDidacticDescription(
   idleTimeoutMs = 30_000
 ): string | null {
   // Terminal states
-  if (agentStatus === 'completed') return 'Trabalho finalizado! Este agente concluiu todas as suas tarefas';
-  if (agentStatus === 'shutdown') return 'Encerrando... este agente foi desligado após completar seu trabalho';
+  if (agentStatus === 'completed') return 'Work finished! This agent completed all its tasks';
+  if (agentStatus === 'shutdown') return 'Shutting down... this agent was stopped after completing its work';
 
   // Idle state
   if (lastEventMs > idleTimeoutMs) {
     const secs = Math.round(lastEventMs / 1000);
-    return `Descansando... aguardando novas instruções (${secs}s inativo)`;
+    return `Resting... waiting for new instructions (${secs}s idle)`;
   }
 
   if (!tool) return null;
@@ -253,63 +253,63 @@ export function generateDidacticDescription(
   switch (tool) {
     case 'Read':
       return fileName
-        ? `Lendo o arquivo ${fileName} para entender o código existente`
-        : 'Lendo um arquivo do projeto para entender sua estrutura';
+        ? `Reading file ${fileName} to understand existing code`
+        : 'Reading a project file to understand its structure';
     case 'Glob': {
       const pattern = parsed?.['pattern'];
       return typeof pattern === 'string'
-        ? `Buscando arquivos com padrão ${shortStr(String(pattern), 25)} - isso ajuda a encontrar onde o código relevante está`
-        : 'Procurando arquivos no projeto por nome ou extensão';
+        ? `Searching files with pattern ${shortStr(String(pattern), 25)} - this helps find where the relevant code is`
+        : 'Searching project files by name or extension';
     }
     case 'Grep': {
       const pattern = parsed?.['pattern'];
       return typeof pattern === 'string'
-        ? `Buscando no código por '${shortStr(String(pattern), 25)}' - grep encontra ocorrências de texto dentro dos arquivos`
-        : 'Buscando ocorrências de texto dentro dos arquivos do projeto';
+        ? `Searching code for '${shortStr(String(pattern), 25)}' - grep finds text occurrences within files`
+        : 'Searching for text occurrences within project files';
     }
     case 'Edit':
       return fileName
-        ? `Editando ${fileName} - modificando código existente com precisão cirúrgica`
-        : 'Editando um arquivo - alterando partes específicas do código';
+        ? `Editing ${fileName} - modifying existing code with surgical precision`
+        : 'Editing a file - changing specific parts of the code';
     case 'Write':
       return fileName
-        ? `Criando o arquivo ${fileName} - escrevendo código novo do zero`
-        : 'Criando um novo arquivo no projeto';
+        ? `Creating file ${fileName} - writing new code from scratch`
+        : 'Creating a new file in the project';
     case 'NotebookEdit':
-      return 'Editando um Jupyter Notebook - ferramenta usada para código interativo';
+      return 'Editing a Jupyter Notebook - tool used for interactive code';
     case 'Bash': {
       const cmd = parsed?.['command'];
       if (typeof cmd === 'string') {
         const shortCommand = shortStr(cmd.split('\n')[0], 30);
-        return `Executando no terminal: ${shortCommand} - comandos que interagem com o sistema`;
+        return `Running in terminal: ${shortCommand} - commands that interact with the system`;
       }
-      return 'Executando um comando no terminal do sistema';
+      return 'Running a command in the system terminal';
     }
     case 'SendMessage': {
       const recipient = parsed?.['recipient'] ?? parsed?.['target_agent_id'];
       if (typeof recipient === 'string') {
-        return `Enviando mensagem para ${shortStr(recipient, 20)} - agentes se comunicam para coordenar o trabalho`;
+        return `Sending message to ${shortStr(recipient, 20)} - agents communicate to coordinate work`;
       }
-      return 'Comunicando com outro agente da equipe';
+      return 'Communicating with another team agent';
     }
     case 'TaskCreate':
-      return 'Criando uma nova tarefa - dividindo o trabalho em partes menores e gerenciáveis';
+      return 'Creating a new task - breaking work into smaller manageable pieces';
     case 'TaskUpdate':
-      return 'Atualizando status de uma tarefa - mantendo o quadro de progresso sincronizado';
+      return 'Updating task status - keeping the progress board in sync';
     case 'TaskList':
-      return 'Verificando a lista de tarefas - vendo o que já foi feito e o que falta';
+      return 'Checking the task list - seeing what is done and what remains';
     case 'TaskGet':
-      return 'Consultando detalhes de uma tarefa específica';
+      return 'Reading details of a specific task';
     case 'WebSearch': {
       const query = parsed?.['query'];
       if (typeof query === 'string') {
-        return `Pesquisando na web: '${shortStr(query, 25)}' - buscando informações e documentação`;
+        return `Searching the web: '${shortStr(query, 25)}' - looking for information and documentation`;
       }
-      return 'Fazendo uma pesquisa na web para encontrar informação relevante';
+      return 'Doing a web search to find relevant information';
     }
     case 'WebFetch':
-      return 'Acessando uma página web para extrair informações';
+      return 'Fetching a web page to extract information';
     default:
-      return `Usando a ferramenta ${tool} para avançar no trabalho`;
+      return `Using tool ${tool} to move the work forward`;
   }
 }

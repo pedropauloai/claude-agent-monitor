@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DEFAULT_SERVER_PORT } from '@cam/shared';
 import { logger } from '../utils/logger.js';
@@ -429,11 +429,37 @@ const importCommand = new Command('import')
         }
       }
 
-      // Step 2: Import tasks
+      // Step 2: Fetch existing tasks for idempotency check
+      const existingTitles = new Set<string>();
+
+      if (sprintId) {
+        const existingResponse = await fetch(
+          `${getApiBase()}/api/projects/${projectId}/tasks?sprint_id=${sprintId}`,
+        );
+        if (existingResponse.ok) {
+          const existingData = (await existingResponse.json()) as TasksResponse;
+          for (const t of existingData.tasks) {
+            existingTitles.add(t.title.toLowerCase().trim());
+          }
+          if (existingTitles.size > 0) {
+            logger.info(`Found ${chalk.cyan(String(existingTitles.size))} existing task(s) in sprint`);
+          }
+        }
+      }
+
+      // Step 3: Import tasks (skip duplicates)
       let imported = 0;
       let skipped = 0;
+      let failed = 0;
 
       for (const task of parsed.tasks) {
+        // Idempotency: skip tasks that already exist by title
+        if (existingTitles.has(task.title.toLowerCase().trim())) {
+          skipped++;
+          logger.info(`Skipped (already exists): ${chalk.gray(task.title)}`);
+          continue;
+        }
+
         const taskStatus = task.completed ? 'completed' : 'planned';
         const body: Record<string, unknown> = {
           title: task.title,
@@ -467,21 +493,219 @@ const importCommand = new Command('import')
           const statusIcon = task.completed ? chalk.green('[x]') : chalk.gray('[ ]');
           logger.item(`${statusIcon} ${data.task.title}`);
         } else {
-          skipped++;
-          logger.warning(`Skipped: ${task.title}`);
+          failed++;
+          logger.warning(`Failed: ${task.title}`);
         }
       }
 
       logger.blank();
-      logger.success(
-        `Imported ${chalk.cyan(String(imported))}/${chalk.cyan(String(parsed.tasks.length))} tasks for ${parsed.name || 'sprint'}`,
-      );
+      logger.success(`Imported ${chalk.cyan(String(imported))} new task(s)`);
       if (skipped > 0) {
-        logger.warning(`${skipped} task(s) skipped (errors)`);
+        logger.info(`Skipped ${chalk.cyan(String(skipped))} existing task(s)`);
+      }
+      if (failed > 0) {
+        logger.warning(`Failed ${chalk.cyan(String(failed))} task(s)`);
       }
     } catch {
       logger.error('Server is not running.');
       logger.info(`Start with: ${chalk.cyan('cam start')}`);
+    }
+
+    logger.blank();
+  });
+
+const syncCommand = new Command('sync')
+  .description('Sync all sprint files from docs/SPRINTS/ to the database')
+  .option('--dir <path>', 'Directory containing sprint files', 'docs/SPRINTS')
+  .action(async (options: { dir: string }) => {
+    const projectId = requireActiveProject();
+
+    logger.blank();
+    logger.section('Sprint Sync');
+    logger.blank();
+
+    // Resolve directory
+    const sprintsDir = resolve(process.cwd(), options.dir);
+    if (!existsSync(sprintsDir)) {
+      logger.error(`Directory not found: ${chalk.cyan(sprintsDir)}`);
+      logger.info(`Run ${chalk.cyan('cam init')} to create the sprint structure.`);
+      logger.blank();
+      process.exit(1);
+    }
+
+    // Find sprint files (sprint-*.md, excluding TEMPLATE.md and README.md)
+    const files = readdirSync(sprintsDir)
+      .filter((f) => /^sprint-\d+.*\.md$/i.test(f))
+      .sort((a, b) => {
+        // Natural sort: sprint-01 < sprint-02 < sprint-10
+        const numA = parseInt(a.match(/sprint-(\d+)/i)?.[1] ?? '0', 10);
+        const numB = parseInt(b.match(/sprint-(\d+)/i)?.[1] ?? '0', 10);
+        return numA - numB;
+      });
+
+    if (files.length === 0) {
+      logger.info('No sprint files found.');
+      logger.info(`Create sprint files in ${chalk.cyan(options.dir)} following the template.`);
+      logger.blank();
+      return;
+    }
+
+    logger.info(`Found ${chalk.cyan(String(files.length))} sprint file(s)`);
+    logger.blank();
+
+    // Fetch existing sprints from DB
+    let existingSprints: SprintData[] = [];
+    try {
+      const response = await fetch(`${getApiBase()}/api/projects/${projectId}/sprints`);
+      if (response.ok) {
+        const data = (await response.json()) as SprintsResponse;
+        existingSprints = data.sprints;
+      }
+    } catch {
+      logger.error('Server is not running.');
+      logger.info(`Start with: ${chalk.cyan('cam start')}`);
+      logger.blank();
+      process.exit(1);
+    }
+
+    let totalImported = 0;
+    let totalSkipped = 0;
+    let totalFailed = 0;
+    let sprintsCreated = 0;
+    let sprintsSynced = 0;
+
+    for (const file of files) {
+      const filePath = resolve(sprintsDir, file);
+      const content = readFileSync(filePath, 'utf-8');
+      const parsed = parseSprintMarkdown(content);
+
+      if (parsed.tasks.length === 0) {
+        logger.info(`${chalk.gray(file)}: no tasks found, skipping`);
+        continue;
+      }
+
+      // Find or create sprint
+      let sprintId: string | undefined;
+      const existing = existingSprints.find(
+        (s) => s.name.toLowerCase() === parsed.name.toLowerCase(),
+      );
+
+      if (existing) {
+        sprintId = existing.id;
+      } else if (parsed.name) {
+        // Create new sprint
+        try {
+          const createResponse = await fetch(
+            `${getApiBase()}/api/projects/${projectId}/sprints`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: parsed.name }),
+            },
+          );
+
+          if (createResponse.ok) {
+            const createData = (await createResponse.json()) as SprintResponse;
+            sprintId = createData.sprint.id;
+            existingSprints.push(createData.sprint); // Track for subsequent files
+            sprintsCreated++;
+          }
+        } catch {
+          logger.warning(`Failed to create sprint for ${file}`);
+          continue;
+        }
+      }
+
+      // Fetch existing tasks for this sprint (idempotency)
+      const existingTitles = new Set<string>();
+      if (sprintId) {
+        try {
+          const tasksResponse = await fetch(
+            `${getApiBase()}/api/projects/${projectId}/tasks?sprint_id=${sprintId}`,
+          );
+          if (tasksResponse.ok) {
+            const tasksData = (await tasksResponse.json()) as TasksResponse;
+            for (const t of tasksData.tasks) {
+              existingTitles.add(t.title.toLowerCase().trim());
+            }
+          }
+        } catch {
+          // Continue without idempotency check
+        }
+      }
+
+      // Import tasks
+      let fileImported = 0;
+      let fileSkipped = 0;
+      let fileFailed = 0;
+
+      for (const task of parsed.tasks) {
+        if (existingTitles.has(task.title.toLowerCase().trim())) {
+          fileSkipped++;
+          continue;
+        }
+
+        const taskStatus = task.completed ? 'completed' : 'planned';
+        const body: Record<string, unknown> = {
+          title: task.title,
+          description: task.description || '',
+          status: taskStatus,
+          priority: task.priority,
+          prd_section: parsed.name || undefined,
+          prd_subsection: task.section || undefined,
+        };
+
+        if (task.tags.length > 0) {
+          body['tags'] = task.tags;
+        }
+
+        if (sprintId) {
+          body['sprint_id'] = sprintId;
+        }
+
+        try {
+          const response = await fetch(
+            `${getApiBase()}/api/projects/${projectId}/tasks`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            },
+          );
+
+          if (response.ok) {
+            fileImported++;
+          } else {
+            fileFailed++;
+          }
+        } catch {
+          fileFailed++;
+        }
+      }
+
+      totalImported += fileImported;
+      totalSkipped += fileSkipped;
+      totalFailed += fileFailed;
+      sprintsSynced++;
+
+      // Log per-file summary
+      const statusIcon = fileImported > 0 ? chalk.green('\u2713') : chalk.gray('\u2013');
+      const parts: string[] = [];
+      if (fileImported > 0) parts.push(chalk.green(`${fileImported} imported`));
+      if (fileSkipped > 0) parts.push(chalk.gray(`${fileSkipped} existing`));
+      if (fileFailed > 0) parts.push(chalk.red(`${fileFailed} failed`));
+
+      logger.item(`${statusIcon} ${chalk.white(file)}: ${parts.join(', ')}`);
+    }
+
+    // Summary
+    logger.blank();
+    if (sprintsCreated > 0) {
+      logger.success(`Created ${chalk.cyan(String(sprintsCreated))} new sprint(s)`);
+    }
+    logger.success(`Synced ${chalk.cyan(String(sprintsSynced))} sprint file(s): ${chalk.green(String(totalImported))} imported, ${chalk.gray(String(totalSkipped))} existing`);
+    if (totalFailed > 0) {
+      logger.warning(`${totalFailed} task(s) failed`);
     }
 
     logger.blank();
@@ -496,3 +720,4 @@ sprintCommand.addCommand(addCommand);
 sprintCommand.addCommand(statusCommand);
 sprintCommand.addCommand(activateCommand);
 sprintCommand.addCommand(importCommand);
+sprintCommand.addCommand(syncCommand);

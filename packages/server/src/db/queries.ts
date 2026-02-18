@@ -55,6 +55,10 @@ export const sessionQueries: Record<string, () => Statement> = {
     return db().prepare(`UPDATE sessions SET agent_count = ? WHERE id = ?`);
   },
 
+  updateMetadata() {
+    return db().prepare(`UPDATE sessions SET metadata = ? WHERE id = ?`);
+  },
+
   getActiveStaleSessions() {
     return db().prepare(`
       SELECT s.id,
@@ -66,6 +70,16 @@ export const sessionQueries: Record<string, () => Statement> = {
           WHERE e.session_id = s.id AND e.timestamp > ?
         )
         AND s.started_at < ?
+    `);
+  },
+
+  getByProject() {
+    return db().prepare(`
+      SELECT s.* FROM sessions s
+      JOIN session_project_bindings spb ON s.id = spb.session_id
+      WHERE spb.project_id = ?
+      ORDER BY s.started_at DESC
+      LIMIT ? OFFSET ?
     `);
   },
 
@@ -91,6 +105,17 @@ export const agentQueries: Record<string, () => Statement> = {
     return db().prepare(
       `SELECT * FROM agents WHERE session_id = ? ORDER BY first_seen_at ASC`,
     );
+  },
+
+  getActiveBySession() {
+    return db().prepare(`
+      SELECT * FROM agents
+      WHERE session_id = ?
+        AND (status = 'active' OR last_activity_at > ?)
+      ORDER BY
+        CASE WHEN status = 'active' THEN 0 ELSE 1 END,
+        last_activity_at DESC
+    `);
   },
 
   getById() {

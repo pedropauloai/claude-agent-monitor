@@ -20,6 +20,7 @@ interface ProjectState {
   updateTask: (taskId: string, updates: Partial<PRDTask>) => void;
   updateActiveProject: (updates: Partial<Project>) => void;
   updateActiveSprint: (updates: Partial<Sprint>) => void;
+  removeProject: (id: string) => void;
   setViewMode: (mode: ViewMode) => void;
   selectTask: (taskId: string | null) => void;
 }
@@ -55,6 +56,11 @@ export const useProjectStore = create<ProjectState>((set) => ({
       activeSprint: state.activeSprint
         ? { ...state.activeSprint, ...updates }
         : null,
+    })),
+  removeProject: (id) =>
+    set((state) => ({
+      projects: state.projects.filter((p) => p.id !== id),
+      activeProject: state.activeProject?.id === id ? null : state.activeProject,
     })),
   setViewMode: (viewMode) => set({ viewMode }),
   selectTask: (selectedTaskId) => set({ selectedTaskId }),

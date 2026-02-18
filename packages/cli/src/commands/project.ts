@@ -77,7 +77,7 @@ const listCommand = new Command('list')
 
       if (data.projects.length === 0) {
         logger.info('No projects found.');
-        logger.info(`Create one with: ${chalk.cyan('cam init --prd ./PRD.md')}`);
+        logger.info(`Create one with: ${chalk.cyan('cam init')}`);
         logger.blank();
         return;
       }
@@ -142,7 +142,7 @@ const showCommand = new Command('show')
 
         if (listData.projects.length === 0) {
           logger.error('No projects found.');
-          logger.info(`Create one with: ${chalk.cyan('cam init --prd ./PRD.md')}`);
+          logger.info(`Create one with: ${chalk.cyan('cam init')}`);
           logger.blank();
           return;
         }

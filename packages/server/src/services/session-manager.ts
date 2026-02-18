@@ -69,6 +69,13 @@ export function listSessions(options: { status?: string; limit?: number; offset?
   return rows.map(rowToSession);
 }
 
+export function listSessionsByProject(projectId: string, options: { limit?: number; offset?: number } = {}): Session[] {
+  const limit = options.limit ?? 10;
+  const offset = options.offset ?? 0;
+  const rows = sessionQueries.getByProject().all(projectId, limit, offset) as SessionRow[];
+  return rows.map(rowToSession);
+}
+
 export function deleteSession(id: string): boolean {
   const result = sessionQueries.deleteById().run(id);
   return result.changes > 0;

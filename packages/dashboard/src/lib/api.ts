@@ -159,16 +159,16 @@ export async function getProjectSessions(projectId: string) {
 export async function getProjectAgents(projectId: string) {
   try {
     const { sessions } = await getProjectSessions(projectId);
-    const allAgents: any[] = [];
-    for (const session of sessions) {
+    const agentPromises = sessions.map(async (session: any) => {
       try {
         const { agents } = await getAgents(session.id);
-        allAgents.push(...agents);
+        return agents;
       } catch {
-        // skip
+        return [];
       }
-    }
-    return { agents: allAgents };
+    });
+    const results = await Promise.all(agentPromises);
+    return { agents: results.flat() };
   } catch {
     return { agents: [] };
   }

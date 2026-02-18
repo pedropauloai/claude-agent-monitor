@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Project } from '@cam/shared';
 import { useProjectStore } from '../../stores/project-store.js';
@@ -6,7 +6,9 @@ import { useSessionStore } from '../../stores/session-store.js';
 import { useSettingsStore } from '../../stores/settings-store.js';
 import type { ThemeName } from '../../stores/settings-store.js';
 import { formatPercent } from '../../lib/formatters.js';
+import { deleteProject } from '../../lib/api.js';
 import { ActiveIndicator } from './ActiveIndicator.js';
+import { ConfirmModal } from '../shared/ConfirmModal.js';
 
 interface ProjectSidebarProps {
   collapsed: boolean;
@@ -110,9 +112,9 @@ function getHeaderLabelClasses(theme: ThemeName): string {
 
 function getHeaderLabel(theme: ThemeName): string {
   switch (theme) {
-    case 'pixel': return 'PROJETOS';
-    case 'terminal': return '[PROJETOS]';
-    default: return 'Projetos';
+    case 'pixel': return 'PROJECTS';
+    case 'terminal': return '[PROJECTS]';
+    default: return 'Projects';
   }
 }
 
@@ -200,7 +202,7 @@ function getSettingsButtonStyle(theme: ThemeName): React.CSSProperties {
 function getSettingsLabel(theme: ThemeName): string {
   switch (theme) {
     case 'terminal': return '> config';
-    default: return 'Configuracoes';
+    default: return 'Settings';
   }
 }
 
@@ -255,10 +257,22 @@ export function ProjectSidebar({
   onToggleCollapse,
   onOpenSettings,
 }: ProjectSidebarProps) {
-  const { projects, activeProject, setActiveProject } = useProjectStore();
+  const { projects, activeProject, setActiveProject, removeProject } = useProjectStore();
   const agents = useSessionStore((s) => s.agents);
   const events = useSessionStore((s) => s.events);
   const theme = useSettingsStore((s) => s.theme);
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+
+  const handleDeleteProject = useCallback(async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteProject(deleteTarget.id);
+      removeProject(deleteTarget.id);
+    } catch {
+      // Delete failed silently
+    }
+    setDeleteTarget(null);
+  }, [deleteTarget, removeProject]);
 
   const sortedProjects = useMemo(() => {
     return [...projects].sort((a, b) => {
@@ -342,7 +356,7 @@ export function ProjectSidebar({
           onClick={onToggleCollapse}
           className={getCollapseButtonClasses(theme)}
           style={getCollapseButtonStyle(theme)}
-          title={collapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapseIcon}
         </button>
@@ -353,8 +367,8 @@ export function ProjectSidebar({
         {sortedProjects.length === 0 && !collapsed && (
           <p className={getEmptyClasses(theme)} style={getEmptyStyle(theme)}>
             {theme === 'terminal'
-              ? '> nenhum projeto. execute: cam init'
-              : <>Nenhum projeto registrado. Use <code className="text-cam-accent">cam init</code> para comecar.</>
+              ? '> no projects. run: cam init'
+              : <>No registered projects. Use <code className="text-cam-accent">cam init</code> to get started.</>
             }
           </p>
         )}
@@ -377,6 +391,7 @@ export function ProjectSidebar({
               agentCount={activeAgentCount}
               hasNewEvents={hasActiveSession && hasRecentEvents}
               onSelect={handleSelectProject}
+              onDelete={setDeleteTarget}
               theme={theme}
             />
           );
@@ -389,7 +404,7 @@ export function ProjectSidebar({
           onClick={onOpenSettings}
           className={getSettingsButtonClasses(theme, collapsed)}
           style={getSettingsButtonStyle(theme)}
-          title="Configuracoes"
+          title="Settings"
         >
           {settingsIcon}
           <AnimatePresence mode="wait">
@@ -409,6 +424,13 @@ export function ProjectSidebar({
           </AnimatePresence>
         </button>
       </div>
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="Remover projeto"
+        message={`Tem certeza que deseja remover "${deleteTarget?.name ?? ''}"? Todos os sprints e tasks associados serao removidos. Esta acao nao pode ser desfeita.`}
+        onConfirm={handleDeleteProject}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </motion.aside>
   );
 }
@@ -426,6 +448,7 @@ interface ProjectItemProps {
   agentCount: number;
   hasNewEvents: boolean;
   onSelect: (project: Project) => void;
+  onDelete: (project: Project) => void;
   theme: ThemeName;
 }
 
@@ -438,6 +461,7 @@ function ProjectItem({
   agentCount,
   hasNewEvents,
   onSelect,
+  onDelete,
   theme,
 }: ProjectItemProps) {
   const initial = project.name.charAt(0).toUpperCase();
@@ -532,6 +556,13 @@ function ProjectItem({
             [{'\u2588'.repeat(Math.round(completionPct / 10))}{'\u2591'.repeat(10 - Math.round(completionPct / 10))}] {completionPct}%
           </span>
         </div>
+        {/* Delete button - terminal theme */}
+        <span
+          onClick={(e) => { e.stopPropagation(); onDelete(project); }}
+          className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 hover:opacity-100 transition-opacity"
+          style={{ color: '#aa0000', fontSize: '10px', cursor: 'pointer' }}
+          title="Remover projeto"
+        >[DEL]</span>
       </button>
     );
   }
@@ -623,6 +654,13 @@ function ProjectItem({
             </div>
           )}
         </div>
+        {/* Delete button - pixel theme */}
+        <span
+          onClick={(e) => { e.stopPropagation(); onDelete(project); }}
+          className="absolute right-1 top-1 opacity-0 hover:opacity-100 transition-opacity"
+          style={{ fontSize: '6px', color: '#ff4444', cursor: 'pointer', fontFamily: "'Press Start 2P', monospace" }}
+          title="Remover projeto"
+        >X</span>
       </button>
     );
   }
@@ -681,6 +719,20 @@ function ProjectItem({
           </div>
         )}
       </div>
+
+      {/* Delete button - appears on hover (modern theme) */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(project);
+        }}
+        className="absolute top-1.5 right-1.5 p-1 rounded-md text-cam-text-muted hover:text-red-500 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
+        title="Remover projeto"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+      </button>
     </motion.button>
   );
 }

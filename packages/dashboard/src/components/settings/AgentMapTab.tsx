@@ -2,10 +2,10 @@ import { useSettingsStore } from '../../stores/settings-store.js';
 import type { DisplayMode } from '../../stores/settings-store.js';
 
 const ACTIVITY_WINDOW_OPTIONS = [
-  { value: 60_000, label: '1 minuto' },
-  { value: 180_000, label: '3 minutos' },
-  { value: 300_000, label: '5 minutos' },
-  { value: 600_000, label: '10 minutos' },
+  { value: 60_000, label: '1 minute' },
+  { value: 180_000, label: '3 minutes' },
+  { value: 300_000, label: '5 minutes' },
+  { value: 600_000, label: '10 minutes' },
 ];
 
 function ToggleSwitch({
@@ -55,10 +55,10 @@ export function AgentMapTab() {
         <ToggleSwitch
           checked={showLabels}
           onChange={toggleLabels}
-          label="Mostrar etiquetas de atividade"
+          label="Show activity labels"
         />
         <p className="text-[10px] text-cam-text-muted mt-1.5 ml-0.5">
-          Exibe o nome da ferramenta/acao acima de cada agente no mapa.
+          Displays the tool/action name above each agent on the map.
         </p>
       </section>
 
@@ -67,20 +67,20 @@ export function AgentMapTab() {
         <ToggleSwitch
           checked={showInteractions}
           onChange={toggleInteractions}
-          label="Mostrar linhas de comunicacao"
+          label="Show communication lines"
         />
         <p className="text-[10px] text-cam-text-muted mt-1.5 ml-0.5">
-          Desenha linhas conectando agentes que se comunicam entre si.
+          Draws lines connecting agents that communicate with each other.
         </p>
       </section>
 
       {/* Speech Bubbles Display Mode */}
       <section>
-        <h3 className="text-sm font-medium text-cam-text mb-3">Baloes de fala</h3>
+        <h3 className="text-sm font-medium text-cam-text mb-3">Speech bubbles</h3>
         <div className="grid grid-cols-2 gap-2">
           {([
-            { value: 'technical' as DisplayMode, label: 'Tecnico', description: 'Mostra funcao/ferramenta sendo executada' },
-            { value: 'didactic' as DisplayMode, label: 'Didatico', description: 'Mostra explicacao amigavel' },
+            { value: 'technical' as DisplayMode, label: 'Technical', description: 'Shows function/tool being executed' },
+            { value: 'didactic' as DisplayMode, label: 'Didactic', description: 'Shows friendly explanation' },
           ]).map((option) => (
             <button
               key={option.value}
@@ -118,9 +118,9 @@ export function AgentMapTab() {
 
       {/* Activity Window */}
       <section>
-        <h3 className="text-sm font-medium text-cam-text mb-3">Janela de atividade</h3>
+        <h3 className="text-sm font-medium text-cam-text mb-3">Activity window</h3>
         <p className="text-[10px] text-cam-text-muted mb-2">
-          Tempo maximo para considerar um agente como ativo.
+          Maximum time to consider an agent as active.
         </p>
         <select
           value={activityWindow}

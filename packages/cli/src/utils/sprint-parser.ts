@@ -20,6 +20,7 @@ export interface ParsedSprintTask {
   priority: string;
   tags: string[];
   description: string;
+  files: string[];
   section: string;
 }
 
@@ -93,6 +94,7 @@ export function parseSprintMarkdown(content: string): ParsedSprint {
         priority: 'medium',
         tags: [],
         description: '',
+        files: [],
         section: currentSection,
       };
       continue;
@@ -121,6 +123,15 @@ export function parseSprintMarkdown(content: string): ParsedSprint {
       const descMatch = trimmed.match(/^Description:\s*(.+)$/i);
       if (descMatch) {
         currentTask.description = descMatch[1].trim();
+        continue;
+      }
+
+      const filesMatch = trimmed.match(/^Files:\s*(.+)$/i);
+      if (filesMatch) {
+        currentTask.files = filesMatch[1]
+          .split(',')
+          .map((f) => f.trim())
+          .filter((f) => f.length > 0);
         continue;
       }
     }

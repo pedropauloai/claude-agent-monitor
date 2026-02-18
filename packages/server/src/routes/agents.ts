@@ -37,6 +37,7 @@ function mapAgent(row: AgentRow) {
 agentsRouter.get('/:id/agents', (req: Request, res: Response) => {
   try {
     const sessionId = req.params['id']!;
+    // Return all agents for the session - frontend handles display limits
     const rows = agentQueries.getBySession().all(sessionId) as AgentRow[];
     const agents = rows.map(mapAgent);
     res.json({ agents });
