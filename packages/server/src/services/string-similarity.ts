@@ -6,7 +6,6 @@
  *
  * Algorithms:
  * - Jaro-Winkler distance (string-level similarity)
- * - Levenshtein distance (edit distance normalized to 0-1)
  * - Token-based similarity (best token-to-token Jaro-Winkler)
  * - Combined similarity (weighted blend of full-string + token)
  */
@@ -191,78 +190,6 @@ export function jaroWinkler(a: string, b: string): number {
   const jaroWinklerScore = jaro + prefixLen * scalingFactor * (1 - jaro);
 
   return Math.min(jaroWinklerScore, 1.0);
-}
-
-// ---------------------------------------------------------------------------
-// Levenshtein distance similarity
-// ---------------------------------------------------------------------------
-
-/**
- * Compute the Levenshtein edit distance between two strings.
- *
- * Uses the standard dynamic programming approach with O(min(m,n)) space
- * (single-row optimization).
- */
-function levenshteinDistance(s1: string, s2: string): number {
-  // Ensure s1 is the shorter string for space optimization
-  if (s1.length > s2.length) {
-    [s1, s2] = [s2, s1];
-  }
-
-  const m = s1.length;
-  const n = s2.length;
-
-  // Edge cases
-  if (m === 0) return n;
-
-  // Previous row of distances (conceptually row i-1)
-  let prev = new Array<number>(m + 1);
-  // Current row of distances
-  let curr = new Array<number>(m + 1);
-
-  // Initialize base row: distance from empty string to s1[0..j]
-  for (let j = 0; j <= m; j++) {
-    prev[j] = j;
-  }
-
-  for (let i = 1; i <= n; i++) {
-    curr[0] = i;
-
-    for (let j = 1; j <= m; j++) {
-      const cost = s1[j - 1] === s2[i - 1] ? 0 : 1;
-      curr[j] = Math.min(
-        (curr[j - 1] ?? 0) + 1,        // insertion
-        (prev[j] ?? 0) + 1,             // deletion
-        (prev[j - 1] ?? 0) + cost       // substitution
-      );
-    }
-
-    // Swap rows
-    [prev, curr] = [curr, prev];
-  }
-
-  return prev[m] ?? 0;
-}
-
-/**
- * Compute the Levenshtein similarity between two strings.
- *
- * Normalises the edit distance to a 0-1 range:
- *   similarity = 1 - (distance / max(|s1|, |s2|))
- *
- * @returns A value between 0 (completely different) and 1 (identical).
- */
-export function levenshteinSimilarity(a: string, b: string): number {
-  const s1 = normalizeString(a);
-  const s2 = normalizeString(b);
-
-  if (s1.length === 0 && s2.length === 0) return 1.0;
-
-  const maxLen = Math.max(s1.length, s2.length);
-  if (maxLen === 0) return 1.0;
-
-  const distance = levenshteinDistance(s1, s2);
-  return 1 - distance / maxLen;
 }
 
 // ---------------------------------------------------------------------------

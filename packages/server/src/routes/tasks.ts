@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { updateTaskRequestSchema } from '@cam/shared';
+import { updateTaskRequestSchema, createTaskRequestSchema } from '@cam/shared';
 import {
   listTasks,
   getTask,
   updateTask,
   getTaskStatusSummary,
   getProject,
+  createTaskInProject,
+  deleteTaskFromProject,
 } from '../services/project-manager.js';
 import { taskActivityQueries } from '../db/queries.js';
 import {
@@ -39,6 +41,57 @@ tasksRouter.get('/:id/tasks', (req: Request, res: Response) => {
     const summary = getTaskStatusSummary(projectId);
 
     res.json({ tasks, summary });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/projects/:id/tasks - Create a new task
+tasksRouter.post('/:id/tasks', (req: Request, res: Response) => {
+  try {
+    const projectId = String(req.params['id']);
+    const project = getProject(projectId);
+    if (!project) {
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    const parsed = createTaskRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Invalid request', details: parsed.error.issues });
+      return;
+    }
+
+    const task = createTaskInProject(projectId, {
+      title: parsed.data.title,
+      description: parsed.data.description,
+      status: parsed.data.status,
+      priority: parsed.data.priority,
+      complexity: parsed.data.complexity,
+      tags: parsed.data.tags,
+      sprintId: parsed.data.sprint_id,
+      prdSection: parsed.data.prd_section,
+      prdSubsection: parsed.data.prd_subsection,
+      dependsOn: parsed.data.depends_on,
+      externalId: parsed.data.external_id,
+    });
+
+    res.status(201).json({ task });
+  } catch (err) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/projects/:id/tasks/:taskId - Delete a task
+tasksRouter.delete('/:id/tasks/:taskId', (req: Request, res: Response) => {
+  try {
+    const taskId = String(req.params['taskId']);
+    const deleted = deleteTaskFromProject(taskId);
+    if (!deleted) {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+    res.status(204).send();
   } catch (err) {
     res.status(500).json({ error: 'Internal server error' });
   }

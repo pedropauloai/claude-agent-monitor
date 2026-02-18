@@ -50,6 +50,7 @@ export interface PRDTask {
   completedAt?: string;
   sessionId?: string;
   prdSection?: string;
+  prdSubsection?: string;
   prdLineStart?: number;
   prdLineEnd?: number;
   createdAt: string;

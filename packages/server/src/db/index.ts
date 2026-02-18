@@ -37,6 +37,22 @@ export function initDb(dbPath?: string): Database.Database {
     db.exec(`ALTER TABLE events ADD COLUMN causation_id TEXT`);
   } catch { /* column already exists */ }
 
+  // Sprint 11: Add prd_subsection column to prd_tasks table
+  try {
+    db.exec(`ALTER TABLE prd_tasks ADD COLUMN prd_subsection TEXT`);
+  } catch { /* column already exists */ }
+
+  // Sprint 11: Retrofit existing prd_section values that contain " > "
+  // Split "Sprint X - Name > Subsection" into prd_section="Sprint X - Name", prd_subsection="Subsection"
+  try {
+    db.exec(`
+      UPDATE prd_tasks
+      SET prd_subsection = TRIM(SUBSTR(prd_section, INSTR(prd_section, ' > ') + 3)),
+          prd_section = TRIM(SUBSTR(prd_section, 1, INSTR(prd_section, ' > ') - 1))
+      WHERE prd_section LIKE '% > %' AND (prd_subsection IS NULL OR prd_subsection = '')
+    `);
+  } catch { /* migration already applied or no matching rows */ }
+
   // Sprint 8: Ensure project_registry table exists
   db.exec(`
     CREATE TABLE IF NOT EXISTS project_registry (

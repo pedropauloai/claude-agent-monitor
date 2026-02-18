@@ -132,7 +132,7 @@ function AgentRow({
   onSelect: () => void;
   compact?: boolean;
 }) {
-  const displayName = getAgentDisplayName(agent.id, agent.name);
+  const displayName = getAgentDisplayName(agent.id, agent.name, agent.type ?? undefined);
   const statusChar = STATUS_CHARS[agent.status] || "[ ]";
   const statusColor = STATUS_COLORS[agent.status] || "terminal-dim";
 

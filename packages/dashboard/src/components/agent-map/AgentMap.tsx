@@ -19,7 +19,7 @@ export function AgentMap() {
   const agentNames = useMemo(() => {
     const map = new Map<string, string>();
     for (const agent of agents) {
-      map.set(agent.id, getAgentDisplayName(agent.id, agent.name || agent.id));
+      map.set(agent.id, getAgentDisplayName(agent.id, agent.name || agent.id, agent.type ?? undefined));
     }
     return map;
   }, [agents]);

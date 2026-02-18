@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { AgentEvent } from '@cam/shared';
-import { TASK_TOOLS, FILE_CHANGE_TOOLS, FILE_READ_TOOLS, COMMAND_TOOLS } from '@cam/shared';
+import { TASK_TOOLS } from '@cam/shared';
 import {
   prdTaskQueries,
   taskActivityQueries,
@@ -12,7 +12,7 @@ import {
 } from '../db/queries.js';
 import { updateTask } from './project-manager.js';
 import { sseManager } from './sse-manager.js';
-import { combinedSimilarity, tokenSimilarity, tokenize } from './string-similarity.js';
+import { combinedSimilarity } from './string-similarity.js';
 
 // ---------------------------------------------------------------------------
 // Backlog sprint protection
@@ -43,20 +43,8 @@ interface PrdTaskRow {
   acceptance_criteria: string | null;
 }
 
-interface CorrelationMatch {
-  taskId: string;
-  projectId: string;
-  confidence: number;
-  reason: string;
-}
-
 // Minimum confidence threshold for a match to trigger a status update
 const CONFIDENCE_THRESHOLD = 0.6;
-
-// Bonus applied to the score of a task that has an active agent-task binding.
-// This makes subsequent events from the same agent strongly prefer the
-// task it was already assigned to, reducing false-positive switches.
-const AGENT_BINDING_BOOST = 0.3;
 
 // ---------------------------------------------------------------------------
 // Project row shape (used by session-project binding)
@@ -175,129 +163,8 @@ function getAgentBinding(
 }
 
 // ---------------------------------------------------------------------------
-// Matching helpers
+// Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Score how well a file path matches a set of tag strings.
- *
- * Tags typically contain short descriptors like "auth", "database", "api",
- * "frontend", "ui", etc.  A file path like `src/services/auth-handler.ts`
- * should strongly match the tag "auth".
- */
-function filePathMatchesTags(filePath: string, tags: string[]): number {
-  if (!filePath || tags.length === 0) return 0;
-
-  // Normalise path segments: split on separators, strip extensions
-  const pathLower = filePath.toLowerCase();
-  const segments = pathLower
-    .replace(/\\/g, '/')
-    .split('/')
-    .flatMap(s => s.replace(/\.[^.]+$/, '').split(/[\-_.\s]+/))
-    .filter(s => s.length >= 2);
-
-  if (segments.length === 0) return 0;
-
-  let matched = 0;
-  for (const tag of tags) {
-    const tagLower = tag.toLowerCase();
-    // Check if any path segment contains the tag or vice-versa
-    for (const seg of segments) {
-      if (seg.includes(tagLower) || tagLower.includes(seg)) {
-        matched++;
-        break;
-      }
-    }
-  }
-
-  return matched / tags.length;
-}
-
-/**
- * Map a tool name to a conceptual category of work for matching purposes.
- *   - Write / Edit / NotebookEdit  -> "implementation"
- *   - Read / Glob / Grep           -> "research"
- *   - Bash                         -> "command" (could be tests, builds, etc.)
- */
-type ToolCategory = 'implementation' | 'research' | 'command' | 'task' | 'other';
-
-function toolCategory(toolName: string | undefined): ToolCategory {
-  if (!toolName) return 'other';
-  if ((FILE_CHANGE_TOOLS as readonly string[]).includes(toolName)) return 'implementation';
-  if ((FILE_READ_TOOLS as readonly string[]).includes(toolName)) return 'research';
-  if ((COMMAND_TOOLS as readonly string[]).includes(toolName)) return 'command';
-  if ((TASK_TOOLS as readonly string[]).includes(toolName)) return 'task';
-  return 'other';
-}
-
-/**
- * Return a small bonus score when the tool category aligns with the nature
- * of a task.  For instance, an "implementation" tool being used likely
- * means the agent is coding, which is relevant to most implementation tasks.
- *
- * We keep this modest (max 0.15) so it acts as a tie-breaker rather than
- * overriding actual content matching.
- */
-function toolCategoryBonus(category: ToolCategory, taskTitle: string): number {
-  const titleLower = taskTitle.toLowerCase();
-  if (category === 'implementation') {
-    // Implementation tasks typically mention: implement, create, build, add, write, develop, setup, set up
-    const implKeywords = ['implement', 'create', 'build', 'add', 'write', 'develop', 'setup', 'set up', 'design', 'refactor'];
-    if (implKeywords.some(k => titleLower.includes(k))) return 0.15;
-    return 0.05; // small generic boost for any write operation
-  }
-  if (category === 'command') {
-    // Command tasks often involve testing, deployment, CI
-    const cmdKeywords = ['test', 'deploy', 'build', 'ci', 'lint', 'format', 'run', 'script', 'migrate'];
-    if (cmdKeywords.some(k => titleLower.includes(k))) return 0.15;
-    return 0.0;
-  }
-  return 0.0;
-}
-
-// ---------------------------------------------------------------------------
-// Extract useful text from event data
-// ---------------------------------------------------------------------------
-
-function extractFilePath(event: AgentEvent): string | undefined {
-  if (event.filePath) return event.filePath;
-
-  const meta = event.metadata as Record<string, unknown> | undefined;
-  if (!meta) return undefined;
-
-  const toolInput = (meta['tool_input'] ?? meta) as Record<string, unknown>;
-  if (typeof toolInput !== 'object' || toolInput === null) return undefined;
-
-  const path = toolInput['file_path'] ?? toolInput['path'] ?? toolInput['filePath'];
-  return typeof path === 'string' ? path : undefined;
-}
-
-function extractKeywords(event: AgentEvent): string[] {
-  const keywords: string[] = [];
-
-  // Pull subject or description from metadata
-  const meta = event.metadata as Record<string, unknown> | undefined;
-  if (meta) {
-    const toolInput = (meta['tool_input'] ?? meta) as Record<string, unknown>;
-    if (typeof toolInput === 'object' && toolInput !== null) {
-      const subject = toolInput['subject'];
-      if (typeof subject === 'string') keywords.push(subject);
-
-      const command = toolInput['command'];
-      if (typeof command === 'string') keywords.push(command);
-
-      const content = toolInput['content'];
-      if (typeof content === 'string' && content.length < 500) keywords.push(content);
-    }
-  }
-
-  // Input text (already truncated by event-processor)
-  if (event.input && event.input.length < 500) {
-    keywords.push(event.input);
-  }
-
-  return keywords;
-}
 
 function parseTags(raw: string | null): string[] {
   if (!raw) return [];
@@ -310,220 +177,12 @@ function parseTags(raw: string | null): string[] {
 }
 
 // ---------------------------------------------------------------------------
-// Core matching logic
+// Audit logging
 // ---------------------------------------------------------------------------
 
-/**
- * @deprecated Use findBestMatchV2() instead. Kept for reference.
- * Try to match a single event against all PRD tasks across all projects.
- * Returns the best match (if any) above CONFIDENCE_THRESHOLD.
- */
-function findBestMatchLegacy(event: AgentEvent): CorrelationMatch | null {
-  const filePath = extractFilePath(event);
-  const keywords = extractKeywords(event);
-  const category = toolCategory(event.tool);
-
-  // Short-circuit: if we have nothing to match on, bail out early
-  if (!filePath && keywords.length === 0 && category === 'other') return null;
-
-  const projects = projectQueries.getAll().all() as Array<{ id: string }>;
-  if (projects.length === 0) return null;
-
-  let bestMatch: CorrelationMatch | null = null;
-
-  for (const project of projects) {
-    const tasks = prdTaskQueries.getByProject().all(project.id) as PrdTaskRow[];
-
-    for (const task of tasks) {
-      // Skip tasks that are already completed or deferred
-      if (task.status === 'completed' || task.status === 'deferred') continue;
-
-      let score = 0;
-      const reasons: string[] = [];
-      const tags = parseTags(task.tags);
-
-      // 1) File path vs tags matching (weight: up to 0.5)
-      if (filePath && tags.length > 0) {
-        const tagScore = filePathMatchesTags(filePath, tags);
-        if (tagScore > 0) {
-          score += tagScore * 0.5;
-          reasons.push(`file-path/tags match (${(tagScore * 100).toFixed(0)}%)`);
-        }
-      }
-
-      // 2) File path vs task title matching (weight: up to 0.3)
-      if (filePath) {
-        const pathBasename = filePath.replace(/\\/g, '/').split('/').pop() ?? '';
-        const titleScore = combinedSimilarity(pathBasename, task.title);
-        if (titleScore > 0) {
-          score += titleScore * 0.3;
-          reasons.push(`file-path/title match (${(titleScore * 100).toFixed(0)}%)`);
-        }
-      }
-
-      // 3) Keywords vs task title + description matching (weight: up to 0.4)
-      if (keywords.length > 0) {
-        let bestKeywordScore = 0;
-        for (const kw of keywords) {
-          const titleMatch = combinedSimilarity(kw, task.title);
-          const descMatch = combinedSimilarity(kw, task.description);
-          const kwScore = Math.max(titleMatch, descMatch * 0.8);
-          if (kwScore > bestKeywordScore) bestKeywordScore = kwScore;
-        }
-        if (bestKeywordScore > 0) {
-          score += bestKeywordScore * 0.4;
-          reasons.push(`keyword/title match (${(bestKeywordScore * 100).toFixed(0)}%)`);
-        }
-      }
-
-      // 4) Tool category bonus (weight: up to 0.15)
-      const catBonus = toolCategoryBonus(category, task.title);
-      if (catBonus > 0) {
-        score += catBonus;
-        reasons.push(`tool-category bonus (${category})`);
-      }
-
-      // Clamp to 1.0
-      if (score > 1.0) score = 1.0;
-
-      if (score >= CONFIDENCE_THRESHOLD && (bestMatch === null || score > bestMatch.confidence)) {
-        bestMatch = {
-          taskId: task.id,
-          projectId: task.project_id,
-          confidence: score,
-          reason: reasons.join('; '),
-        };
-      }
-    }
-  }
-
-  return bestMatch;
-}
-
-// ---------------------------------------------------------------------------
-// New matching logic with session-project and agent-task bindings
-// ---------------------------------------------------------------------------
-
-/**
- * Try to match a single event against PRD tasks, using binding context
- * to narrow the search space and boost scores.
- *
- * Improvements over the legacy matcher:
- * 1. If the session is bound to a project, only tasks from that project
- *    are considered (eliminates cross-project false positives).
- * 2. If the agent has an active task binding, that task receives a
- *    confidence boost of +0.3, making it strongly preferred.
- */
-function findBestMatch(event: AgentEvent): CorrelationMatch | null {
-  const filePath = extractFilePath(event);
-  const keywords = extractKeywords(event);
-  const category = toolCategory(event.tool);
-
-  // Short-circuit: if we have nothing to match on, bail out early
-  if (!filePath && keywords.length === 0 && category === 'other') return null;
-
-  // Step 1: Determine which projects to search
-  const boundProjectId = getProjectForSession(event.sessionId);
-  let projectIds: string[];
-
-  if (boundProjectId) {
-    // Session is bound -- only search the bound project
-    projectIds = [boundProjectId];
-  } else {
-    // No binding -- search all projects (legacy behaviour)
-    const projects = projectQueries.getAll().all() as Array<{ id: string }>;
-    if (projects.length === 0) return null;
-    projectIds = projects.map(p => p.id);
-  }
-
-  // Step 2: Check for an active agent-task binding
-  const agentBinding = getAgentBinding(event.agentId, event.sessionId);
-
-  let bestMatch: CorrelationMatch | null = null;
-
-  for (const projectId of projectIds) {
-    const tasks = prdTaskQueries.getByProject().all(projectId) as PrdTaskRow[];
-
-    for (const task of tasks) {
-      // Skip tasks that are already completed or deferred
-      if (task.status === 'completed' || task.status === 'deferred') continue;
-
-      let score = 0;
-      const reasons: string[] = [];
-      const tags = parseTags(task.tags);
-
-      // 1) File path vs tags matching (weight: up to 0.5)
-      if (filePath && tags.length > 0) {
-        const tagScore = filePathMatchesTags(filePath, tags);
-        if (tagScore > 0) {
-          score += tagScore * 0.5;
-          reasons.push(`file-path/tags match (${(tagScore * 100).toFixed(0)}%)`);
-        }
-      }
-
-      // 2) File path vs task title matching (weight: up to 0.3)
-      if (filePath) {
-        const pathBasename = filePath.replace(/\\/g, '/').split('/').pop() ?? '';
-        const titleScore = combinedSimilarity(pathBasename, task.title);
-        if (titleScore > 0) {
-          score += titleScore * 0.3;
-          reasons.push(`file-path/title match (${(titleScore * 100).toFixed(0)}%)`);
-        }
-      }
-
-      // 3) Keywords vs task title + description matching (weight: up to 0.4)
-      if (keywords.length > 0) {
-        let bestKeywordScore = 0;
-        for (const kw of keywords) {
-          const titleMatch = combinedSimilarity(kw, task.title);
-          const descMatch = combinedSimilarity(kw, task.description);
-          const kwScore = Math.max(titleMatch, descMatch * 0.8);
-          if (kwScore > bestKeywordScore) bestKeywordScore = kwScore;
-        }
-        if (bestKeywordScore > 0) {
-          score += bestKeywordScore * 0.4;
-          reasons.push(`keyword/title match (${(bestKeywordScore * 100).toFixed(0)}%)`);
-        }
-      }
-
-      // 4) Tool category bonus (weight: up to 0.15)
-      const catBonus = toolCategoryBonus(category, task.title);
-      if (catBonus > 0) {
-        score += catBonus;
-        reasons.push(`tool-category bonus (${category})`);
-      }
-
-      // 5) Agent-task binding boost: if this agent is already bound to this
-      //    task, add a significant confidence boost (+0.3). This ensures that
-      //    once an agent starts working on a task, subsequent tool calls from
-      //    that same agent stay associated with the same task.
-      if (agentBinding && agentBinding.prdTaskId === task.id) {
-        score += AGENT_BINDING_BOOST;
-        reasons.push(`agent-task binding boost (+${(AGENT_BINDING_BOOST * 100).toFixed(0)}%)`);
-      }
-
-      // Clamp to 1.0
-      if (score > 1.0) score = 1.0;
-
-      if (score >= CONFIDENCE_THRESHOLD && (bestMatch === null || score > bestMatch.confidence)) {
-        bestMatch = {
-          taskId: task.id,
-          projectId: task.project_id,
-          confidence: score,
-          reason: reasons.join('; '),
-        };
-      }
-    }
-  }
-
-  return bestMatch;
-}
-
-// ---------------------------------------------------------------------------
-// V2: 5-layer hierarchical matching pipeline with audit logging
-// ---------------------------------------------------------------------------
-
-type LayerName = 'exact_id' | 'tag_match' | 'file_path' | 'title_similarity' | 'keyword_overlap';
+type LayerName = 'exact_id' | 'subject_match' | 'task_create' |
+  'task_update_s1_exact' | 'task_update_s2_subject' | 'task_update_s3_desc' |
+  'task_update_s4_binding' | 'task_list_sync';
 
 function logAudit(
   event: AgentEvent,
@@ -541,285 +200,8 @@ function logAudit(
   } catch { /* audit must never break the pipeline */ }
 }
 
-const CAM_TASK_REF_RE = /\[CAM:([a-f0-9-]{8,})\]/i;
-
-function extractCamTaskRef(text: string | undefined): string | null {
-  if (!text) return null;
-  const m = text.match(CAM_TASK_REF_RE);
-  return m?.[1] ?? null;
-}
-
-function loadCandidateTasks(projectId?: string): PrdTaskRow[] {
-  if (projectId) {
-    return prdTaskQueries.getByProject().all(projectId) as PrdTaskRow[];
-  }
-  const projects = projectQueries.getAll().all() as Array<{ id: string }>;
-  const allTasks: PrdTaskRow[] = [];
-  for (const p of projects) {
-    allTasks.push(...(prdTaskQueries.getByProject().all(p.id) as PrdTaskRow[]));
-  }
-  return allTasks;
-}
-
-function isExcluded(task: PrdTaskRow): boolean {
-  return task.status === 'completed' || task.status === 'deferred';
-}
-
-function extractTokenSet(texts: string[]): Set<string> {
-  const tokens = new Set<string>();
-  for (const text of texts) {
-    if (!text) continue;
-    for (const token of tokenize(text)) {
-      tokens.add(token);
-    }
-  }
-  return tokens;
-}
-
-function findBestMatchV2(event: AgentEvent, projectId?: string): CorrelationMatch | null {
-  const resolvedProjectId = projectId ?? getProjectForSession(event.sessionId) ?? undefined;
-  const tasks = loadCandidateTasks(resolvedProjectId);
-  if (tasks.length === 0) return null;
-
-  const filePath = extractFilePath(event);
-  const keywords = extractKeywords(event);
-  const category = toolCategory(event.tool);
-  if (!filePath && keywords.length === 0 && category === 'other') return null;
-
-  const camRef = extractCamTaskRef(event.input) ?? extractCamTaskRef(event.output);
-  const meta = event.metadata as Record<string, unknown> | undefined;
-  const evtToolInput = meta ? (meta['tool_input'] ?? meta) as Record<string, unknown> : undefined;
-  const eventExternalId = (evtToolInput?.['taskId'] ?? evtToolInput?.['id'] ?? evtToolInput?.['external_id']) as string | undefined;
-  const eventSubject = evtToolInput?.['subject'] as string | undefined;
-
-  // --- Layer 1: Exact ID Match (confidence = 1.0) ---
-  {
-    const layerName: LayerName = 'exact_id';
-    for (const task of tasks) {
-      if (isExcluded(task)) continue;
-      let exactMatch = false;
-      let reason = '';
-
-      if (camRef && (camRef === task.id || camRef === task.external_id)) {
-        exactMatch = true;
-        reason = `CAM reference [CAM:${camRef}] matches task`;
-      }
-      if (!exactMatch && eventExternalId && task.external_id && eventExternalId === task.external_id) {
-        exactMatch = true;
-        reason = `external_id "${eventExternalId}" exact match`;
-      }
-      if (!exactMatch && eventExternalId && eventExternalId === task.id) {
-        exactMatch = true;
-        reason = `external_id "${eventExternalId}" matches task.id directly`;
-      }
-
-      if (exactMatch) {
-        logAudit(event, task.id, layerName, 1.0, true, reason);
-        return { taskId: task.id, projectId: task.project_id, confidence: 1.0, reason: `[L1:exact_id] ${reason}` };
-      }
-    }
-    logAudit(event, null, layerName, 0, false, 'No exact ID match found');
-  }
-
-  // --- Layer 2: Tag Match via combinedSimilarity (confidence = 0.85-0.95) ---
-  {
-    const layerName: LayerName = 'tag_match';
-    const subjectText = eventSubject ?? (keywords.length > 0 ? keywords[0] : undefined);
-    if (subjectText) {
-      let bestScore = 0;
-      let bestTask: PrdTaskRow | null = null;
-      for (const task of tasks) {
-        if (isExcluded(task)) continue;
-        const score = combinedSimilarity(subjectText, task.title);
-        if (score > bestScore) { bestScore = score; bestTask = task; }
-      }
-      if (bestTask && bestScore > 0.85) {
-        const reason = `subject/title similarity ${(bestScore * 100).toFixed(0)}% ("${subjectText.slice(0, 80)}" ~ "${bestTask.title.slice(0, 80)}")`;
-        logAudit(event, bestTask.id, layerName, bestScore, true, reason);
-        return { taskId: bestTask.id, projectId: bestTask.project_id, confidence: bestScore, reason: `[L2:tag_match] ${reason}` };
-      }
-      logAudit(event, bestTask?.id ?? null, layerName, bestScore, false,
-        bestTask ? `Best score ${(bestScore * 100).toFixed(0)}% below 0.85 threshold` : 'No candidates available');
-    } else {
-      logAudit(event, null, layerName, 0, false, 'No subject/keyword text available for tag match');
-    }
-  }
-
-  // --- Layer 3: File Path Domain Match (confidence = 0.7-0.85) ---
-  {
-    const layerName: LayerName = 'file_path';
-    if (filePath) {
-      let bestScore = 0;
-      let bestTask: PrdTaskRow | null = null;
-      let bestReason = '';
-      const pathLabel = filePath.replace(/\\/g, '/').split('/').pop()?.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ') ?? '';
-
-      for (const task of tasks) {
-        if (isExcluded(task)) continue;
-        const tags = parseTags(task.tags);
-        let taskScore = 0;
-        let reason = '';
-
-        const titleScore = combinedSimilarity(pathLabel, task.title);
-        if (titleScore > taskScore) { taskScore = titleScore; reason = `file "${pathLabel}" ~ title "${task.title.slice(0, 60)}" (${(titleScore * 100).toFixed(0)}%)`; }
-
-        if (tags.length > 0) {
-          for (const tag of tags) {
-            const tagScore = combinedSimilarity(pathLabel, tag);
-            if (tagScore > taskScore) { taskScore = tagScore; reason = `file "${pathLabel}" ~ tag "${tag}" (${(tagScore * 100).toFixed(0)}%)`; }
-          }
-          const segmentScore = filePathMatchesTags(filePath, tags);
-          if (segmentScore > taskScore) { taskScore = segmentScore; reason = `file path segments match ${(segmentScore * 100).toFixed(0)}% of tags`; }
-        }
-        if (taskScore > bestScore) { bestScore = taskScore; bestTask = task; bestReason = reason; }
-      }
-
-      if (bestTask && bestScore > 0.7) {
-        const confidence = Math.min(0.7 + bestScore * 0.15, 0.85);
-        logAudit(event, bestTask.id, layerName, confidence, true, bestReason);
-        return { taskId: bestTask.id, projectId: bestTask.project_id, confidence, reason: `[L3:file_path] ${bestReason}` };
-      }
-      logAudit(event, bestTask?.id ?? null, layerName, bestScore, false,
-        bestTask ? `Best score ${(bestScore * 100).toFixed(0)}% below 0.7 threshold for "${pathLabel}"` : `No candidates for file "${pathLabel}"`);
-    } else {
-      logAudit(event, null, layerName, 0, false, 'No file path in event');
-    }
-  }
-
-  // --- Layer 4: Title Similarity via Jaro-Winkler (confidence = 0.6-0.8) ---
-  {
-    const layerName: LayerName = 'title_similarity';
-    if (keywords.length > 0) {
-      let bestScore = 0;
-      let bestTask: PrdTaskRow | null = null;
-      let bestReason = '';
-
-      for (const task of tasks) {
-        if (isExcluded(task)) continue;
-        let taskBestScore = 0;
-        let kwReason = '';
-        for (const kw of keywords) {
-          const titleScore = combinedSimilarity(kw, task.title);
-          const descScore = combinedSimilarity(kw, task.description) * 0.8;
-          const kwScore = Math.max(titleScore, descScore);
-          if (kwScore > taskBestScore) {
-            taskBestScore = kwScore;
-            kwReason = titleScore >= descScore
-              ? `kw "${kw.slice(0, 60)}" ~ title "${task.title.slice(0, 60)}" (${(titleScore * 100).toFixed(0)}%)`
-              : `kw "${kw.slice(0, 60)}" ~ description (${(descScore * 100).toFixed(0)}%)`;
-          }
-        }
-        const catBonus = toolCategoryBonus(category, task.title);
-        const totalScore = Math.min(taskBestScore + catBonus, 1.0);
-        if (totalScore > bestScore) {
-          bestScore = totalScore;
-          bestTask = task;
-          bestReason = kwReason + (catBonus > 0 ? ` + ${category} bonus (${(catBonus * 100).toFixed(0)}%)` : '');
-        }
-      }
-
-      if (bestTask && bestScore > 0.6) {
-        const confidence = Math.min(bestScore, 0.8);
-        logAudit(event, bestTask.id, layerName, confidence, true, bestReason);
-        return { taskId: bestTask.id, projectId: bestTask.project_id, confidence, reason: `[L4:title_similarity] ${bestReason}` };
-      }
-      logAudit(event, bestTask?.id ?? null, layerName, bestScore, false,
-        bestTask ? `Best score ${(bestScore * 100).toFixed(0)}% below 0.6 threshold` : 'No candidates for keyword matching');
-    } else {
-      logAudit(event, null, layerName, 0, false, 'No keywords extracted from event');
-    }
-  }
-
-  // --- Layer 5: Keyword Overlap Fallback (confidence = 0.5-0.7) ---
-  {
-    const layerName: LayerName = 'keyword_overlap';
-    const eventTexts: string[] = [...keywords];
-    if (filePath) eventTexts.push(filePath);
-    if (event.output && event.output.length < 500) eventTexts.push(event.output);
-    const eventTokens = extractTokenSet(eventTexts);
-
-    if (eventTokens.size > 0) {
-      let bestScore = 0;
-      let bestTask: PrdTaskRow | null = null;
-
-      for (const task of tasks) {
-        if (isExcluded(task)) continue;
-        const taskTexts = [task.title, task.description];
-        const taskTags = parseTags(task.tags);
-        if (taskTags.length > 0) taskTexts.push(...taskTags);
-        const taskTokens = extractTokenSet(taskTexts);
-        if (taskTokens.size === 0) continue;
-
-        let matchedTokens = 0;
-        for (const eTok of eventTokens) {
-          for (const tTok of taskTokens) {
-            if (combinedSimilarity(eTok, tTok) > 0.8) { matchedTokens++; break; }
-          }
-        }
-        const overlapRatioEvent = matchedTokens / eventTokens.size;
-        const overlapRatioTask = Math.min(matchedTokens / taskTokens.size, 1.0);
-        const overlapScore = overlapRatioEvent * 0.6 + overlapRatioTask * 0.4;
-        if (overlapScore > bestScore) { bestScore = overlapScore; bestTask = task; }
-      }
-
-      if (bestTask && bestScore > 0.3) {
-        const confidence = Math.min(0.5 + bestScore * 0.2, 0.7);
-        const reason = `token overlap ${(bestScore * 100).toFixed(0)}% (${eventTokens.size} event tokens)`;
-        logAudit(event, bestTask.id, layerName, confidence, true, reason);
-        return { taskId: bestTask.id, projectId: bestTask.project_id, confidence, reason: `[L5:keyword_overlap] ${reason}` };
-      }
-      logAudit(event, bestTask?.id ?? null, layerName, bestScore, false,
-        `Best overlap ${(bestScore * 100).toFixed(0)}% below threshold (${eventTokens.size} event tokens)`);
-    } else {
-      logAudit(event, null, layerName, 0, false, 'No tokens extracted from event');
-    }
-  }
-
-  return null;
-}
-
 // ---------------------------------------------------------------------------
-// Status inference
-// ---------------------------------------------------------------------------
-
-/**
- * Decide what status the matched task should transition to based on the event.
- *
- * - File write / edit tools          -> in_progress
- * - Bash with test success in output -> completed
- * - Read / Grep / Glob               -> in_progress  (agent researching the task)
- */
-function inferTaskStatus(event: AgentEvent): 'in_progress' | 'completed' | null {
-  const category = toolCategory(event.tool);
-
-  if (category === 'implementation' || category === 'research') {
-    return 'in_progress';
-  }
-
-  if (category === 'command') {
-    // Check if the command output signals test success
-    const output = (event.output ?? '').toLowerCase();
-    const testsPass =
-      output.includes('tests passed') ||
-      output.includes('test passed') ||
-      output.includes('all tests pass') ||
-      output.includes('0 failed') ||
-      /\d+ passing/.test(output) ||
-      output.includes('test suites: 0 failed') ||
-      output.includes('build succeeded') ||
-      output.includes('build successful');
-
-    if (testsPass) return 'completed';
-
-    // If the agent is running commands (e.g. building, testing) it's working
-    return 'in_progress';
-  }
-
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Task-tool handlers (preserved from original implementation)
+// Task-tool handlers
 // ---------------------------------------------------------------------------
 
 function handleTaskCreate(event: AgentEvent, input: Record<string, unknown>): void {
@@ -1260,7 +642,7 @@ function handleTaskList(event: AgentEvent): void {
         }
       }
 
-      // Try 2: fuzzy match by subject vs title using combinedSimilarity
+      // Try 2: match by subject vs title using combinedSimilarity
       if (!matchedPrdTask && taskSubject) {
         let bestScore = 0;
         for (const prdTask of prdTasks) {
@@ -1348,73 +730,6 @@ function handleTaskList(event: AgentEvent): void {
 }
 
 // ---------------------------------------------------------------------------
-// Correlate general tool events against PRD tasks
-// ---------------------------------------------------------------------------
-
-function handleGeneralToolEvent(event: AgentEvent): void {
-  const match = findBestMatchV2(event);
-  if (!match) return;
-
-  const newStatus = inferTaskStatus(event);
-  if (!newStatus) return;
-
-  // Fetch the current task to make sure we don't regress status
-  const currentTasks = prdTaskQueries.getById().get(match.taskId) as PrdTaskRow | undefined;
-  if (!currentTasks) return;
-
-  // Status progression order: never go backwards
-  const statusOrder = ['backlog', 'planned', 'pending', 'in_progress', 'in_review', 'completed'];
-  const currentIdx = statusOrder.indexOf(currentTasks.status);
-  const newIdx = statusOrder.indexOf(newStatus);
-
-  // Skip if the task is blocked or would regress
-  if (currentTasks.status === 'blocked') return;
-  if (currentIdx >= newIdx) return;
-
-  // Skip backlog sprint tasks - they should not be auto-updated by correlation
-  if (isBacklogSprintTask(currentTasks)) return;
-
-  // Apply the update via project-manager (handles sprint/project counts, SSE)
-  const updates: Record<string, string | undefined> = {
-    status: newStatus,
-    assignedAgent: event.agentId,
-  };
-  updateTask(match.taskId, updates);
-
-  // --- Agent-Task binding management for general tool events ---
-  if (newStatus === 'in_progress') {
-    // Bind the agent so future events get a confidence boost for this task
-    bindAgentToTask(event.agentId, event.sessionId, match.taskId, match.confidence);
-  }
-  if (newStatus === 'completed') {
-    // Expire the binding: agent is free for a new task
-    const now = new Date().toISOString();
-    agentTaskBindingQueries.expire().run(now, event.agentId, event.sessionId);
-  }
-
-  // Record activity
-  const activityType = newStatus === 'completed' ? 'task_completed' : 'task_started';
-
-  taskActivityQueries.insert().run(
-    randomUUID(),
-    match.taskId,
-    event.id,
-    event.sessionId,
-    event.agentId,
-    activityType,
-    event.timestamp,
-    `Auto-correlated: ${match.reason} (confidence: ${(match.confidence * 100).toFixed(0)}%)`
-  );
-
-  sseManager.broadcast('correlation_match', {
-    eventId: event.id,
-    taskId: match.taskId,
-    confidence: match.confidence,
-    reason: match.reason,
-  });
-}
-
-// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -1422,21 +737,20 @@ function handleGeneralToolEvent(event: AgentEvent): void {
  * Correlate an incoming agent event against PRD tasks.
  *
  * This function is called from the event ingestion route after the event has
- * been persisted.  It performs three kinds of correlation:
+ * been persisted. It uses an "Explicit-First" approach with only 2 paths:
  *
  * 0. **Session binding** -- On SessionStart, auto-bind the session to a project
  *    based on working directory. This narrows all subsequent matching to the
  *    bound project, eliminating cross-project false positives.
  *
- * 1. **Task-tool correlation** -- When the agent uses TaskCreate / TaskUpdate
- *    tools, we link them to PRD tasks by similarity-matching subject text or by
- *    exact external-id match. Agent-task bindings are created/expired here.
+ * 1. **Task-tool correlation** -- When the agent uses TaskCreate / TaskUpdate /
+ *    TaskList tools, we link them to PRD tasks by exact external-id match or
+ *    by subject/title similarity. This is the GOLD path for auto-completing
+ *    tasks (TaskUpdate with status=completed).
  *
- * 2. **General tool correlation** -- When the agent uses Write, Edit, Bash,
- *    Read, etc., we match the file path and keywords against PRD task titles,
- *    descriptions, and tags.  If confidence exceeds 0.6 the task status is
- *    updated automatically (e.g. pending -> in_progress, in_progress ->
- *    completed when tests pass). Active agent-task bindings boost confidence.
+ * General tool events (Write, Edit, Bash, Read, etc.) are intentionally NOT
+ * correlated. They produced too much noise with low-confidence matches.
+ * Task status changes should come from explicit signals only.
  */
 export function correlateEvent(event: AgentEvent): void {
   try {
@@ -1463,7 +777,7 @@ export function correlateEvent(event: AgentEvent): void {
       return;
     }
 
-    // --- Path 1: explicit task tool events ---
+    // --- Path 1: explicit task tool events (ONLY path for correlation) ---
     if (event.tool && (TASK_TOOLS as readonly string[]).includes(event.tool)) {
       const meta = event.metadata as Record<string, unknown> | undefined;
       if (!meta) return;
@@ -1479,10 +793,9 @@ export function correlateEvent(event: AgentEvent): void {
       return;
     }
 
-    // --- Path 2: general tool events (file changes, commands, reads) ---
-    if (event.tool && event.hookType === 'PostToolUse') {
-      handleGeneralToolEvent(event);
-    }
+    // General tool events (Write, Edit, Bash, Read, etc.) are intentionally
+    // NOT correlated. The removed handleGeneralToolEvent() was the main
+    // source of noise with low-confidence fuzzy matches.
   } catch {
     // Correlation errors should never break event processing
   }

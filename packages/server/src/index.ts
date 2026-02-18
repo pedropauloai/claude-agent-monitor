@@ -10,7 +10,10 @@ import {
 import { initDb, closeDb } from "./db/index.js";
 import { sseManager } from "./services/sse-manager.js";
 import { agentQueries } from "./db/queries.js";
-import { cleanupStaleSessions } from "./services/event-processor.js";
+import {
+  cleanupStaleSessions,
+  STALE_SESSION_CLEANUP_INTERVAL_MS,
+} from "./services/event-processor.js";
 
 // Routes
 import { eventsRouter } from "./routes/events.js";
@@ -128,8 +131,12 @@ export function startServer(options?: { port?: number; dbPath?: string }) {
     }
   }, AGENT_IDLE_TIMEOUT_MS);
 
-  // Stale session cleanup: mark sessions with no activity in 10 minutes as completed
-  const staleCleanupInterval = setInterval(cleanupStaleSessions, 60_000);
+  // Stale session cleanup: mark sessions with no activity in 30 minutes as completed
+  // Runs every 5 minutes (STALE_SESSION_CLEANUP_INTERVAL_MS)
+  const staleCleanupInterval = setInterval(
+    cleanupStaleSessions,
+    STALE_SESSION_CLEANUP_INTERVAL_MS,
+  );
 
   // Graceful shutdown
   const shutdown = () => {

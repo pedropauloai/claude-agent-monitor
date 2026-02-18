@@ -17,6 +17,7 @@ import { AgentMap } from "../../agent-map/AgentMap";
 import { TaskDetailPanel } from "../../shared/TaskDetailPanel";
 import { HorizontalLayout, ResizablePanel, ResizeHandle, VerticalLayout } from "../../layout/ResizableLayout.js";
 import { AgentRightPanel } from "../../shared/AgentRightPanel.js";
+import { InProcessWarning } from "../../shared/InProcessWarning.js";
 import "./modern.css";
 
 function ConnectionIndicator() {
@@ -76,6 +77,9 @@ export function ModernShell() {
 
       {/* Stats Bar */}
       <ModernStatsBar />
+
+      {/* In-process mode warning */}
+      <InProcessWarning />
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">

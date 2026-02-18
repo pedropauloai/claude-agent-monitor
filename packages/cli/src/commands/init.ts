@@ -249,7 +249,7 @@ export const initCommand = new Command("init")
             }
           }
         } else if (!options.prd) {
-          // No PRD - create minimal project
+          // No PRD - create minimal project for observability-only mode
           try {
             const projName = basename(process.cwd());
             const response = await fetch(
@@ -269,6 +269,12 @@ export const initCommand = new Command("init")
                 projectId = data.project.id;
                 logger.success(
                   `Project created: ${chalk.cyan(data.project.name)} (no PRD)`,
+                );
+                logger.info(
+                  "Projeto registrado sem PRD. Observability ativo!",
+                );
+                logger.info(
+                  `Importe um PRD depois com: ${chalk.cyan("cam init --prd <path>")}`,
                 );
               }
             }

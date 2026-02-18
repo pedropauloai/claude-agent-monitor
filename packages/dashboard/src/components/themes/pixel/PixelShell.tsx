@@ -15,6 +15,7 @@ import { SessionPicker } from "../../shared/SessionPicker";
 import { AgentMap } from "../../agent-map/AgentMap";
 import { TaskDetailPanel } from "../../shared/TaskDetailPanel";
 import { AgentRightPanel } from "../../shared/AgentRightPanel.js";
+import { InProcessWarning } from "../../shared/InProcessWarning.js";
 import "./pixel.css";
 
 function PixelConnectionIndicator() {
@@ -88,6 +89,9 @@ export function PixelShell() {
 
       {/* Stats HUD */}
       <PixelStatsBar />
+
+      {/* In-process mode warning */}
+      <InProcessWarning />
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">

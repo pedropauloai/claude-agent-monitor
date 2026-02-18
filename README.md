@@ -44,7 +44,7 @@ CAM was built for developers who use **Claude Code** (with Opus model) to build 
 
 **CAM changes that.** It's a dashboard that connects to Claude Code via hooks and shows you everything in real-time. Think of it as a **flight control center** for your AI agents.
 
-> **Learning through observability**: The core concept of CAM. By watching agents work, you understand *how* software is built -- not just the final result. Perfect for beginners who want to learn by doing.
+> **Learning through observability**: The core concept of CAM. By watching agents work, you understand *how* software is built -- not just the final result.
 
 ### Two Pillars, One Dashboard
 
@@ -116,7 +116,7 @@ claude "read PRD.md and implement all Sprint 1 tasks"
 - **Terminal Theme** -- Green-on-black interface with tmux-style panes, ASCII sparklines, vim keybindings, and CRT scan line effects.
 - **Pixel Art Theme** -- Retro RPG aesthetic with pixel borders, NES color palette, game-style HUD, and 8-bit typography.
 - **Agent Map** -- Pixel art visualization where agents are animated characters on a "Mission Floor". Watch them code, search, talk, and celebrate in real-time.
-- **Kanban Board** -- Auto-updating task board with columns for Backlog, Planned, In Progress, In Review, Completed, and Blocked.
+- **Kanban Board** -- Auto-updating task board with columns for Backlog, Planned, In Progress, and Completed.
 - **Burndown Chart** -- Real vs ideal progress lines with scope change indicators and sprint velocity tracking.
 
 ---
@@ -143,7 +143,7 @@ claude "read PRD.md and implement all Sprint 1 tasks"
 - **Burndown chart** -- Classic burndown with ideal vs actual lines, scope changes, and time-based projections
 - **Dependency graph** -- Interactive visualization of task dependencies with critical path and blocker detection
 - **PRD overview** -- Color-coded view of your entire PRD with per-section completion percentages
-- **Multi-project support** -- Monitor multiple projects from a single CAM dashboard *(coming in Sprint 8)*
+- **Multi-project support** -- Monitor multiple projects from a single CAM dashboard with project sidebar and switcher
 
 ---
 
@@ -375,34 +375,57 @@ This workflow has been battle-tested building CAM itself (dogfooding since day o
 
 ---
 
-## WSL Setup (Windows Subsystem for Linux)
+## Multi-Agent Setup (tmux + Teams)
 
-If you run Claude Code inside WSL2 and the CAM server on Windows (or vice versa), here is what you need to know.
+For **full end-to-end agent tracking**, use Claude Code Teams with tmux. Each agent runs as a separate process with its own `session_id`, enabling per-agent tracking in the dashboard.
 
-### How it works
+### Recommended: tmux + Teams
 
-The `cam-hook` binary auto-detects WSL by reading `/proc/version`. When WSL is detected, it resolves the Windows host IP via the default gateway (`ip route show default`) or the nameserver in `/etc/resolv.conf`. **No manual configuration is needed** in most cases.
+```bash
+# 1. Start CAM
+cam start
 
-If auto-detection doesn't work:
+# 2. In a tmux session, start Claude Code
+tmux new-session -s dev
+claude "implement Sprint 1 using a team of agents"
+
+# Claude Code Teams automatically creates tmux panes for each agent.
+# Each agent fires hooks independently -- CAM tracks them all.
+```
+
+This gives you:
+- Per-agent activity tracking (who did what)
+- Individual agent timelines
+- Accurate tool call attribution
+- Agent lifecycle events (spawn, idle, shutdown)
+
+### Alternative: Single process (in-process mode)
+
+```bash
+# Works without tmux, but with limited agent tracking
+cam start
+claude "implement the feature"
+```
+
+In this mode, background agents share the main process. CAM still captures all tool events, but they are attributed to the main agent. You get full observability of *what* is happening, but not *who* is doing it.
+
+### WSL Setup (Windows)
+
+The `cam-hook` binary auto-detects WSL by reading `/proc/version`. When WSL is detected, it resolves the Windows host IP via the default gateway. **No manual configuration is needed** in most cases.
+
+If auto-detection fails:
 
 ```bash
 export CAM_SERVER_HOST=172.20.0.1   # Replace with your Windows host IP
 ```
 
-### tmux is OPTIONAL
-
-Some guides suggest using tmux to run Claude Code agents in split panes. This is entirely optional. CAM works with or without tmux:
-
-- **Without tmux**: Run `cam start` in one terminal and `claude` in another
-- **With tmux**: Useful for monitoring multiple agents side by side, but the dashboard already provides this view
-
-### Transport resilience
+### Hook Transport
 
 The hook binary includes built-in resilience:
 
 1. Tries the detected/configured host first
 2. Falls back to `localhost` and `127.0.0.1` if the primary host fails
-3. Exponential backoff between retries (max 3 attempts)
+3. Max 3 attempts with exponential backoff
 4. Always fails silently -- never blocks Claude Code
 
 ### Debug mode
@@ -411,28 +434,13 @@ The hook binary includes built-in resilience:
 export CAM_DEBUG=1
 ```
 
-This prints diagnostic information to stderr:
-
-```
-[cam-hook] WSL detected, resolving Windows host IP...
-[cam-hook] Resolved via default gateway: 172.20.0.1
-[cam-hook] POST to 172.20.0.1:7890 (attempt 1/3)
-[cam-hook] Event delivered via 172.20.0.1
-```
-
-### Diagnostic script
-
-```bash
-bash scripts/test-wsl-hook.sh
-```
-
 ### Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
 | Events not arriving | Run `CAM_DEBUG=1 cam-hook pre-tool-use < /dev/null` to see connection attempts |
 | `ECONNREFUSED` on all hosts | Make sure the CAM server is running (`cam start` or `pnpm dev`) |
-| Gateway IP wrong | Set `CAM_SERVER_HOST` explicitly |
+| Gateway IP wrong (WSL) | Set `CAM_SERVER_HOST` explicitly |
 | Node not found in WSL | Ensure Node.js is installed in WSL or that nvm is configured |
 | Hook takes too long | Check network: `curl -s http://<host>:7890/api/sessions` |
 | Server in WSL, dashboard on Windows | Set bind host: `cam start --bind 0.0.0.0` |
@@ -511,50 +519,23 @@ pnpm --filter @cam/dashboard build
 
 ### v1.0 -- Mission Control (Current)
 
-- [x] Real-time agent monitoring via Claude Code hooks
-- [x] Dashboard with 3 complete themes (Modern, Terminal, Pixel Art)
-- [x] Agent Map with pixel art visualization (8 poses, speech bubbles, animations)
-- [x] PRD import with structured parsing into tasks and sprints
-- [x] Auto-updating Kanban board
-- [x] Sprint progress, burndown charts, dependency graphs
-- [x] Correlation Engine v2 with 5-layer scoring pipeline
-- [x] Multi-agent observability (session grouping, agent lifecycle tracking)
-- [x] CLI for init, start, status, sessions, hooks, and theme management
-- [x] SQLite persistence with full session history
-- [ ] **Sprint 8** -- Project-First Architecture: `cam init` with auto-detect PRD, project router, multi-project support, `cam doctor`
-- [ ] **Sprint 9** -- Dashboard Experience: project sidebar, settings modal, resizable panels, layout cleanup
-- [ ] **Sprint 10** -- Visual Polish: Canvas 2D sprite renderer, high-resolution sprites (24/32/48px), per-theme styling
+Real-time agent monitoring, PRD tracking, pixel art Agent Map, 3 themes, CLI, multi-project support. 11 sprints completed. See [sprint files](docs/SPRINTS/) for details.
 
 ### v1.1 -- Intelligence
 
-- AI-assisted PRD parsing with complexity estimation
-- Automatic dependency suggestions between tasks
-- Session and sprint comparison
-- Export to JSON, CSV, and Markdown reports
-- Performance profiling (slowest tools, bottlenecks)
+AI-assisted PRD parsing, automatic dependency suggestions, session comparison, export (JSON/CSV/Markdown), performance profiling.
 
 ### v2.0 -- Desktop App (Tauri)
 
-- Native desktop application wrapping the existing dashboard
-- System tray with mini-status indicator
-- Native OS notifications for errors and completions
-- Auto-detect Claude Code sessions
-- Auto-start on login
+Native desktop app with system tray, OS notifications, auto-detect Claude Code sessions, auto-start on login.
 
 ### v3.0 -- VS Code Extension
 
-- Integrated WebView panel inside VS Code
-- Status bar item showing agent count and errors
-- Click-to-open on modified files
-- File decorators showing who edited what and when
+Integrated WebView panel, status bar, click-to-open files, file decorators showing agent attribution.
 
 ### v4.0 -- Multi-Machine
 
-- Centralized server (optional cloud deployment)
-- Authentication with API keys
-- Multi-user dashboard
-- PostgreSQL for persistent history
-- Configurable alerts (Slack, Discord, email)
+Centralized server, authentication, multi-user dashboard, PostgreSQL, alerts (Slack, Discord, email).
 
 ---
 

@@ -152,6 +152,7 @@ CREATE TABLE IF NOT EXISTS prd_tasks (
   completed_at TEXT,
   session_id TEXT,
   prd_section TEXT,
+  prd_subsection TEXT,
   prd_line_start INTEGER,
   prd_line_end INTEGER,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),

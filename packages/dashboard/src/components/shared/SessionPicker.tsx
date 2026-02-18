@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSessionStore } from "../../stores/session-store";
+import { useProjectStore } from "../../stores/project-store";
 import { useThemeStore } from "../../stores/theme-store";
 import * as api from "../../lib/api";
 import type { Session } from "@cam/shared";
@@ -36,6 +37,7 @@ export function SessionPicker() {
 
 function useSessionOptions() {
   const { session, setSession } = useSessionStore();
+  const activeProject = useProjectStore((s) => s.activeProject);
   const [options, setOptions] = useState<SessionOption[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -44,10 +46,24 @@ function useSessionOptions() {
 
     async function load() {
       try {
-        const { sessions } = await api.getSessions({ limit: 20 });
+        let sessions: Session[];
+
+        if (activeProject) {
+          // Fetch sessions filtered by the active project
+          const result = await api.getProjectSessions(activeProject.id);
+          sessions = result.sessions as Session[];
+        } else {
+          // Fallback: fetch all recent sessions
+          const result = await api.getSessions({ limit: 20 });
+          sessions = result.sessions as Session[];
+        }
+
         if (cancelled) return;
 
-        const opts: SessionOption[] = (sessions as Session[]).map((s) => ({
+        // Limit to 20 most recent
+        const limited = sessions.slice(0, 20);
+
+        const opts: SessionOption[] = limited.map((s) => ({
           id: s.id,
           label: formatSessionLabel(s),
           sublabel: shortId(s.id),
@@ -68,7 +84,7 @@ function useSessionOptions() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [activeProject?.id]);
 
   const selectSession = async (opt: SessionOption) => {
     try {

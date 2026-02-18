@@ -143,7 +143,7 @@ function AgentCard({
   onSelect: () => void;
   compact?: boolean;
 }) {
-  const displayName = getAgentDisplayName(agent.id, agent.name);
+  const displayName = getAgentDisplayName(agent.id, agent.name, agent.type ?? undefined);
   const identiconColor = generateIdenticon(agent.name);
 
   if (compact) {

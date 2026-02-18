@@ -184,7 +184,7 @@ function CompactAgentCard({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const displayName = getAgentDisplayName(agent.id, agent.name);
+  const displayName = getAgentDisplayName(agent.id, agent.name, agent.type ?? undefined);
   const status = getStatusLabel(agent.status);
   const icon = getAgentIcon(agent);
 
@@ -234,7 +234,7 @@ function AgentCard({
     agent.errorCount > 0 ? Math.max(10, maxHp - agent.errorCount * 20) : maxHp;
   const mp = Math.min(100, agent.toolCallCount % 100);
 
-  const displayName = getAgentDisplayName(agent.id, agent.name);
+  const displayName = getAgentDisplayName(agent.id, agent.name, agent.type ?? undefined);
 
   return (
     <button

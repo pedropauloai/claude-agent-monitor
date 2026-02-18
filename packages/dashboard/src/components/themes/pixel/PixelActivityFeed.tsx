@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useMemo } from "react";
 import { useSessionStore } from "../../../stores/session-store";
 import { useFilterStore } from "../../../stores/filter-store";
+import { useSettingsStore } from "../../../stores/settings-store";
 import { useEvents } from "../../../hooks/use-events";
 import { formatTimestamp } from "../../../lib/formatters";
 import {
@@ -102,21 +103,18 @@ function getCategoryIcon(category: string): string {
 export function PixelActivityFeed() {
   const events = useEvents();
   const agents = useSessionStore((s) => s.agents);
-  const {
-    followMode,
-    toggleFollowMode,
-    searchQuery,
-    setSearchQuery,
-    hidePolling,
-    toggleHidePolling,
-  } = useFilterStore();
+  const { searchQuery, setSearchQuery } = useFilterStore();
+  const followMode = useSettingsStore((s) => s.followMode);
+  const hidePolling = useSettingsStore((s) => s.hidePolling);
+  const toggleFollowMode = useSettingsStore((s) => s.toggleFollowMode);
+  const toggleHidePolling = useSettingsStore((s) => s.toggleHidePolling);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const agentNameMap = useMemo(() => {
     const map = new Map<string, string>();
     for (const agent of agents) {
-      map.set(agent.id, getAgentDisplayName(agent.id, agent.name || agent.id));
+      map.set(agent.id, getAgentDisplayName(agent.id, agent.name || agent.id, agent.type ?? undefined));
     }
     return map;
   }, [agents]);

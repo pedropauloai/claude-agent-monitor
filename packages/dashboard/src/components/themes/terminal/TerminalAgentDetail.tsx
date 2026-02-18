@@ -53,7 +53,7 @@ export function TerminalAgentDetail() {
             className="text-[#00ff00] terminal-glow font-bold"
             title={`${agent.name} (${agent.id})`}
           >
-            {">> " + getAgentDisplayName(agent.id, agent.name)}
+            {">> " + getAgentDisplayName(agent.id, agent.name, agent.type ?? undefined)}
           </span>
           <button
             onClick={() => selectAgent(null)}

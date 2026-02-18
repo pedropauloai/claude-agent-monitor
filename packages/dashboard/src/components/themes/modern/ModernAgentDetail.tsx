@@ -62,7 +62,7 @@ export function ModernAgentDetail() {
                 className="text-sm font-semibold text-cam-text"
                 title={`${agent.name} (${agent.id})`}
               >
-                {getAgentDisplayName(agent.id, agent.name)}
+                {getAgentDisplayName(agent.id, agent.name, agent.type ?? undefined)}
               </h3>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div

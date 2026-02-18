@@ -36,6 +36,8 @@ export function TerminalKanban() {
   const mapStatusToColumn = (status: PRDTaskStatus): PRDTaskStatus => {
     if (status === 'pending') return 'planned';
     if (status === 'deferred') return 'backlog';
+    if (status === 'in_review') return 'in_progress';
+    if (status === 'blocked') return 'in_progress';
     return status;
   };
 

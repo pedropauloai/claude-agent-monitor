@@ -53,6 +53,7 @@ interface PrdTaskRow {
   completed_at: string | null;
   session_id: string | null;
   prd_section: string | null;
+  prd_subsection: string | null;
   prd_line_start: number | null;
   prd_line_end: number | null;
   created_at: string;
@@ -112,6 +113,7 @@ function rowToTask(row: PrdTaskRow): PRDTask {
     completedAt: row.completed_at ?? undefined,
     sessionId: row.session_id ?? undefined,
     prdSection: row.prd_section ?? undefined,
+    prdSubsection: row.prd_subsection ?? undefined,
     prdLineStart: row.prd_line_start ?? undefined,
     prdLineEnd: row.prd_line_end ?? undefined,
     createdAt: row.created_at,
@@ -190,7 +192,7 @@ export function createProject(name: string, prdContent: string, parseMethod: str
       st.tags.length > 0 ? JSON.stringify(st.tags) : null,
       JSON.stringify(st.dependsOn), '[]',
       null, null, null, null,
-      st.prdSection, st.prdLineStart, st.prdLineEnd,
+      st.prdSection, null, st.prdLineStart, st.prdLineEnd,
       now, now
     );
 
@@ -470,6 +472,76 @@ function checkDependencies(projectId: string, completedTaskId: string): void {
       });
     }
   }
+}
+
+// === Create / Delete Task ===
+
+export function createTaskInProject(projectId: string, data: {
+  title: string;
+  description?: string;
+  status?: string;
+  priority?: string;
+  complexity?: number;
+  tags?: string[];
+  sprintId?: string;
+  prdSection?: string;
+  prdSubsection?: string;
+  dependsOn?: string[];
+  externalId?: string;
+}): PRDTask {
+  const now = new Date().toISOString();
+  const taskId = randomUUID();
+
+  prdTaskQueries.insert().run(
+    taskId,
+    projectId,
+    data.sprintId ?? null,
+    data.externalId ?? null,
+    data.title,
+    data.description ?? '',
+    null,
+    data.status ?? 'planned',
+    data.priority ?? 'medium',
+    data.complexity ?? null,
+    data.tags && data.tags.length > 0 ? JSON.stringify(data.tags) : null,
+    JSON.stringify(data.dependsOn ?? []),
+    '[]',
+    null,
+    null,
+    null,
+    null,
+    data.prdSection ?? null,
+    data.prdSubsection ?? null,
+    null, null, // prd_line_start, prd_line_end
+    now,
+    now,
+  );
+
+  // Update sprint + project task counts
+  if (data.sprintId) {
+    sprintQueries.updateTaskCounts().run(data.sprintId, data.sprintId, data.sprintId);
+  }
+  projectQueries.updateTaskCounts().run(projectId, projectId, now, projectId);
+
+  return getTask(taskId)!;
+}
+
+export function deleteTaskFromProject(taskId: string): boolean {
+  const task = getTask(taskId);
+  if (!task) return false;
+
+  const result = prdTaskQueries.deleteById().run(taskId);
+
+  if (result.changes > 0) {
+    const now = new Date().toISOString();
+    // Update sprint + project task counts
+    if (task.sprintId) {
+      sprintQueries.updateTaskCounts().run(task.sprintId, task.sprintId, task.sprintId);
+    }
+    projectQueries.updateTaskCounts().run(task.projectId, task.projectId, now, task.projectId);
+  }
+
+  return result.changes > 0;
 }
 
 export function getTaskStatusSummary(projectId: string) {

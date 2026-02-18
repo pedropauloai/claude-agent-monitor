@@ -57,7 +57,9 @@ export const sessionQueries: Record<string, () => Statement> = {
 
   getActiveStaleSessions() {
     return db().prepare(`
-      SELECT s.id FROM sessions s
+      SELECT s.id,
+        (SELECT MAX(e.timestamp) FROM events e WHERE e.session_id = s.id) as last_event_at
+      FROM sessions s
       WHERE s.status = 'active'
         AND NOT EXISTS (
           SELECT 1 FROM events e
@@ -134,6 +136,16 @@ export const agentQueries: Record<string, () => Statement> = {
       WHERE a.status = 'active'
         AND s.status = 'active'
         AND a.last_activity_at < ?
+    `);
+  },
+
+  /** Find agents created recently whose name equals their ID (unnamed/temporary). */
+  getRecentUnnamed() {
+    return db().prepare(`
+      SELECT * FROM agents
+      WHERE name = id
+        AND first_seen_at > ?
+      ORDER BY first_seen_at DESC
     `);
   },
 };
@@ -453,8 +465,8 @@ export const sprintQueries: Record<string, () => Statement> = {
 export const prdTaskQueries: Record<string, () => Statement> = {
   insert() {
     return db().prepare(`
-      INSERT INTO prd_tasks (id, project_id, sprint_id, external_id, title, description, acceptance_criteria, status, priority, complexity, tags, depends_on, blocked_by, assigned_agent, started_at, completed_at, session_id, prd_section, prd_line_start, prd_line_end, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO prd_tasks (id, project_id, sprint_id, external_id, title, description, acceptance_criteria, status, priority, complexity, tags, depends_on, blocked_by, assigned_agent, started_at, completed_at, session_id, prd_section, prd_subsection, prd_line_start, prd_line_end, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
   },
 

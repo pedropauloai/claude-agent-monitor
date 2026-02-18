@@ -25,7 +25,7 @@ export function ModernStatsBar() {
   const fileEvents = events.filter((e) => e.category === "file_change").length;
 
   const stats = [
-    { label: "Elapsed", value: elapsed, accent: false },
+    { label: "Session Duration", value: elapsed, accent: false },
     {
       label: "Agents",
       value: `${activeAgents}/${agents.length}`,

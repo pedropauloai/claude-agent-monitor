@@ -5,9 +5,7 @@ export const KANBAN_COLUMNS: { id: PRDTaskStatus; label: string }[] = [
   { id: 'backlog', label: 'Backlog' },
   { id: 'planned', label: 'Planned' },
   { id: 'in_progress', label: 'In Progress' },
-  { id: 'in_review', label: 'In Review' },
   { id: 'completed', label: 'Completed' },
-  { id: 'blocked', label: 'Blocked' },
 ];
 
 interface KanbanState {

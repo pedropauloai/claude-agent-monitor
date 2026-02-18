@@ -177,6 +177,7 @@ export const prdTaskSchema = z.object({
   completedAt: z.string().optional(),
   sessionId: z.string().optional(),
   prdSection: z.string().optional(),
+  prdSubsection: z.string().optional(),
   prdLineStart: z.number().int().optional(),
   prdLineEnd: z.number().int().optional(),
   createdAt: z.string(),
@@ -226,7 +227,7 @@ export const taskActivitySchema = z.object({
 
 export const createProjectRequestSchema = z.object({
   name: z.string().min(1),
-  prd_content: z.string().min(1),
+  prd_content: z.string(),
   parse_method: parseMethodSchema.default('structured'),
 });
 
@@ -245,4 +246,18 @@ export const updateTaskRequestSchema = z.object({
   priority: taskPrioritySchema.optional(),
   assignedAgent: z.string().optional(),
   sprintId: z.string().optional(),
+});
+
+export const createTaskRequestSchema = z.object({
+  title: z.string().min(1),
+  description: z.string().default(''),
+  status: prdTaskStatusSchema.default('planned'),
+  priority: taskPrioritySchema.default('medium'),
+  complexity: z.number().int().min(1).max(10).optional(),
+  tags: z.array(z.string()).optional(),
+  sprint_id: z.string().optional(),
+  prd_section: z.string().optional(),
+  prd_subsection: z.string().optional(),
+  depends_on: z.array(z.string()).optional(),
+  external_id: z.string().optional(),
 });

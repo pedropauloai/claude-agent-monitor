@@ -47,7 +47,13 @@ const spawnedSubagentQueue = new Map<string, string[]>();
 const pendingAgentNames: string[] = [];
 
 /** Stale session timeout (ms). Sessions inactive for this long are marked completed. */
-const STALE_SESSION_TIMEOUT_MS = 10 * 60 * 1000;
+const STALE_SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+
+/** Interval (ms) for running the stale session cleanup. */
+export const STALE_SESSION_CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+
+/** Window (ms) for retroactive agent name updates. Agents created within this window can be renamed. */
+const RETROACTIVE_NAME_WINDOW_MS = 30 * 1000;
 
 interface IncomingEvent {
   hook: HookType;
@@ -274,22 +280,23 @@ function persistEvent(event: AgentEvent, now: string): void {
     .getById()
     .get(event.agentId, event.sessionId) as Record<string, unknown> | undefined;
   if (!existingAgent) {
-    // Agent name resolution with 3 layers:
-    // Layer 1: agent_type from SubagentStart metadata (most reliable)
-    // Layer 2: agent_name from metadata
-    // Layer 3: Fallback to agentId (dashboard generates friendly name)
+    // Agent name resolution with 4 layers:
+    // Layer 1: SessionStart -> "main" (this is the leader/main agent)
+    // Layer 2: Pending name from Task tool queue (subagent name designated by parent)
+    // Layer 3: agent_name from metadata
+    // Layer 4: Fallback to agentId (dashboard generates friendly name)
     const agentType =
       (event.metadata?.["agent_type"] as string) || "general-purpose";
-    const agentNameFromType =
-      event.hookType === "SessionStart" && event.metadata?.["agent_type"]
-        ? (event.metadata["agent_type"] as string)
-        : undefined;
-    const pendingName = pendingAgentNames.length > 0 ? pendingAgentNames.shift() : undefined;
+    const isMainAgent = event.hookType === "SessionStart";
+    const pendingName = !isMainAgent && pendingAgentNames.length > 0
+      ? pendingAgentNames.shift()
+      : undefined;
     const agentName =
-      agentNameFromType ||
-      (event.metadata?.["agent_name"] as string) ||
-      pendingName ||
-      event.agentId;
+      isMainAgent
+        ? "main"
+        : pendingName ||
+          (event.metadata?.["agent_name"] as string) ||
+          event.agentId;
     agentQueries
       .upsert()
       .run(
@@ -479,9 +486,10 @@ function persistEvent(event: AgentEvent, now: string): void {
           ? (JSON.parse(rawInput) as Record<string, unknown>)
           : (rawInput as Record<string, unknown>);
       if (input && typeof input === "object") {
+        // Prioritize the `name` field (official agent name like "sprint-dev", "researcher").
+        // Do NOT use `description` as agent name -- it is a task description, not an agent identifier.
         const name =
           (input["name"] as string) ||
-          (input["description"] as string)?.slice(0, 30) ||
           "subagent";
         const type = (input["subagent_type"] as string) || "general-purpose";
         const agentId = `subagent-${name.replace(/[^a-zA-Z0-9-]/g, "-").toLowerCase()}`;
@@ -540,6 +548,11 @@ function persistEvent(event: AgentEvent, now: string): void {
         // When a new session appears, it will be assigned this name
         if (name !== "subagent") {
           pendingAgentNames.push(name);
+
+          // Retroactive update: if SubagentStart already arrived before this
+          // PostToolUse, the agent was created with name = id (temporary).
+          // Find recently-created agents whose name equals their id and rename them.
+          retroactivelyNameAgent(name, event.timestamp);
         }
 
         // Queue for SubagentStop correlation
@@ -830,7 +843,9 @@ function handleTaskCompleted(
 
 /**
  * Cleanup stale sessions: mark active sessions with no recent activity as completed.
- * Should be called periodically (e.g., every 60 seconds).
+ * Uses the last event timestamp as ended_at (not "now"), so the session
+ * end time accurately reflects when work actually stopped.
+ * Should be called periodically (every 5 minutes via STALE_SESSION_CLEANUP_INTERVAL_MS).
  */
 export function cleanupStaleSessions(): void {
   try {
@@ -844,7 +859,22 @@ export function cleanupStaleSessions(): void {
 
     for (const session of staleSessions) {
       const sessionId = session["id"] as string;
-      sessionQueries.updateStatus().run("completed", now, sessionId);
+      // Use the last event timestamp as ended_at, falling back to "now"
+      const lastEventAt = (session["last_event_at"] as string) || now;
+      sessionQueries.updateStatus().run("completed", lastEventAt, sessionId);
+
+      // Also mark all active agents in this session as completed
+      const agents = agentQueries.getBySession().all(sessionId) as Array<
+        Record<string, unknown>
+      >;
+      for (const agent of agents) {
+        if (agent["status"] === "active" || agent["status"] === "idle") {
+          const agentId = agent["id"] as string;
+          agentQueries
+            .updateStatus()
+            .run("completed", lastEventAt, agentId, sessionId);
+        }
+      }
 
       sseManager.broadcast(
         "session_status",
@@ -852,6 +882,7 @@ export function cleanupStaleSessions(): void {
           session: sessionId,
           status: "completed",
           reason: "stale_timeout",
+          endedAt: lastEventAt,
         },
         sessionId,
       );
@@ -864,5 +895,77 @@ export function cleanupStaleSessions(): void {
     }
   } catch {
     // DB not ready or query error, skip silently
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Retroactive Agent Naming (Task 1: SubagentStart vs PostToolUse race)
+// ---------------------------------------------------------------------------
+
+/**
+ * When PostToolUse for the Task tool arrives with a real agent name,
+ * check if there are recently-created agents whose name equals their ID
+ * (meaning SubagentStart arrived first and the agent was given a temporary name).
+ * If found, update the agent's name retroactively.
+ */
+function retroactivelyNameAgent(realName: string, eventTimestamp: string): void {
+  try {
+    const cutoff = new Date(
+      new Date(eventTimestamp).getTime() - RETROACTIVE_NAME_WINDOW_MS,
+    ).toISOString();
+
+    const unnamedAgents = agentQueries
+      .getRecentUnnamed()
+      .all(cutoff) as Array<Record<string, unknown>>;
+
+    if (unnamedAgents.length === 0) return;
+
+    // Pick the most recently created unnamed agent (first in DESC order)
+    const agent = unnamedAgents[0]!;
+    const agentId = agent["id"] as string;
+    const sessionId = agent["session_id"] as string;
+
+    // Update the agent name
+    agentQueries.updateAgentName().run(realName, agentId, sessionId);
+
+    // Also consume the pending name we just pushed (avoid double-assignment)
+    const idx = pendingAgentNames.indexOf(realName);
+    if (idx !== -1) {
+      pendingAgentNames.splice(idx, 1);
+    }
+
+    // Broadcast the name update so the dashboard reflects it
+    sseManager.broadcast(
+      "agent_renamed",
+      {
+        agent: agentId,
+        sessionId,
+        oldName: agentId,
+        newName: realName,
+      },
+      sessionId,
+    );
+
+    // Cross-broadcast to project peers
+    const projectId = getProjectForSession(sessionId);
+    if (projectId) {
+      broadcastToProjectExcluding(
+        projectId,
+        "agent_renamed",
+        {
+          agent: agentId,
+          sessionId,
+          oldName: agentId,
+          newName: realName,
+        },
+        sessionId,
+      );
+    }
+
+    console.log(
+      `[agent-naming] Retroactively renamed agent ${agentId} (session: ${sessionId}) to "${realName}"`,
+    );
+  } catch {
+    // Naming errors should not break event processing
   }
 }

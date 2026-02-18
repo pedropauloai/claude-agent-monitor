@@ -19,6 +19,7 @@ interface CheckResult {
   ok: boolean;
   detail?: string;
   fix?: string;
+  warning?: boolean;
 }
 
 export const doctorCommand = new Command("doctor")
@@ -168,41 +169,67 @@ export const doctorCommand = new Command("doctor")
       fix: hasPrd ? undefined : "Create a PRD.md or run 'cam init --prd <path>'",
     });
 
+    // 9. Check tmux availability (warning only, not a failure)
+    const tmuxAvailable = checkBinaryAvailable("tmux");
+    results.push({
+      label: "tmux available for multi-agent tracking",
+      ok: tmuxAvailable,
+      detail: tmuxAvailable
+        ? "Found in PATH"
+        : "Not found (recommended for full E2E tracking)",
+      fix: tmuxAvailable
+        ? undefined
+        : process.platform === "win32"
+          ? "Install WSL + tmux for complete per-agent tracking"
+          : "Install tmux for complete per-agent tracking",
+      warning: true,
+    });
+
     // Display results
     let passCount = 0;
     let failCount = 0;
+    let warnCount = 0;
 
     for (const result of results) {
-      const icon = result.ok ? chalk.green("\u2713") : chalk.red("\u2717");
-      const detail = result.detail ? chalk.gray(` (${result.detail})`) : "";
-      console.log(`  ${icon} ${result.label}${detail}`);
       if (result.ok) {
+        const icon = chalk.green("\u2713");
+        const detail = result.detail ? chalk.gray(` (${result.detail})`) : "";
+        console.log(`  ${icon} ${result.label}${detail}`);
         passCount++;
+      } else if (result.warning) {
+        const icon = chalk.yellow("\u26A0");
+        const detail = result.detail ? chalk.gray(` (${result.detail})`) : "";
+        console.log(`  ${icon} ${result.label}${detail}`);
+        warnCount++;
       } else {
+        const icon = chalk.red("\u2717");
+        const detail = result.detail ? chalk.gray(` (${result.detail})`) : "";
+        console.log(`  ${icon} ${result.label}${detail}`);
         failCount++;
       }
     }
 
-    // Show fixes for failures
-    if (failCount > 0) {
+    // Show fixes for failures and warnings
+    const fixableResults = results.filter((r) => !r.ok && r.fix);
+    if (fixableResults.length > 0) {
       logger.blank();
       logger.section("Fixes");
-      for (const result of results) {
-        if (!result.ok && result.fix) {
-          logger.item(
-            `${chalk.yellow(result.label)}: run ${chalk.cyan(result.fix)}`,
-          );
-        }
+      for (const result of fixableResults) {
+        const color = result.warning ? chalk.gray : chalk.yellow;
+        logger.item(
+          `${color(result.label)}: ${chalk.cyan(result.fix)}`,
+        );
       }
     }
 
     // Summary
     logger.blank();
+    const warnText = warnCount > 0 ? `, ${warnCount} warning${warnCount > 1 ? "s" : ""}` : "";
     if (failCount === 0) {
-      logger.success(`All ${passCount} checks passed! CAM is ready to use.`);
+      logger.success(`All ${passCount} checks passed${warnText}! CAM is ready to use.`);
     } else {
       logger.warning(
-        `${passCount} passed, ${failCount} failed. Fix the issues above.`,
+        `${passCount} passed, ${failCount} failed${warnText}. Fix the issues above.`,
       );
     }
 
