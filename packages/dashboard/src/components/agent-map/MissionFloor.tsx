@@ -3,6 +3,7 @@ import type { AgentMapPosition, AgentAnimationState, SpeechBubbleData } from '@c
 import type { ConnectionStatus } from '../../stores/session-store';
 import { AgentCard } from './AgentCard';
 import { SpeechBubble } from './SpeechBubble';
+import { NexbotGuide } from '../agent-map-3d/NexbotGuide.js';
 
 interface MissionFloorProps {
   positions: Map<string, AgentMapPosition>;
@@ -19,6 +20,8 @@ interface MissionFloorProps {
   connectionStatus: ConnectionStatus;
   eventCount: number;
   totalAgentsEver: number;
+  hasProject: boolean;
+  projectsLoaded: boolean;
 }
 
 /** Animation states considered "active" (agent is doing something) */
@@ -172,8 +175,20 @@ function formatElapsed(seconds: number): string {
 }
 
 /**
+ * Inline code styling for instruction text.
+ */
+function Code({ children }: { children: string }) {
+  return (
+    <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-violet-300 text-[11px] font-mono">
+      {children}
+    </code>
+  );
+}
+
+/**
  * EmptyFloor - Contextual empty state for the Agent Map.
- * Displays different messages depending on why no agents are visible.
+ * Displays NEXBOT 3D robot with contextual instructions depending on
+ * why no agents are visible. Each state has a professional onboarding feel.
  */
 function EmptyFloor({
   sessionStatus,
@@ -181,12 +196,16 @@ function EmptyFloor({
   connectionStatus,
   eventCount,
   totalAgentsEver,
+  hasProject,
+  projectsLoaded,
 }: {
   sessionStatus: 'active' | 'completed' | 'error' | null;
   sessionStartedAt: string | null;
   connectionStatus: ConnectionStatus;
   eventCount: number;
   totalAgentsEver: number;
+  hasProject: boolean;
+  projectsLoaded: boolean;
 }) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -211,61 +230,82 @@ function EmptyFloor({
     return () => clearInterval(interval);
   }, [sessionStatus, sessionStartedAt]);
 
-  // Case 1: No session selected
-  if (sessionStatus === null) {
+  // Loading state: projects haven't been fetched yet
+  if (!projectsLoaded) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3">
-        {/* Radar / monitor icon */}
-        <svg
-          className="w-10 h-10 text-zinc-700"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9.348 14.652a3.75 3.75 0 010-5.304m5.304 0a3.75 3.75 0 010 5.304m-7.425 2.121a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.807-3.808-9.98 0-13.788m13.788 0c3.808 3.807 3.808 9.98 0 13.788M12 12h.008v.008H12V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-          />
-        </svg>
-        <span className="text-zinc-600 text-sm font-mono">
-          Select a session to view agents
-        </span>
+        <div className="w-8 h-8 border-2 border-zinc-700 border-t-transparent rounded-full animate-spin" />
+        <span className="text-zinc-600 text-xs font-mono">Loading...</span>
       </div>
+    );
+  }
+
+  // Case 0: No project registered — Welcome onboarding
+  if (!hasProject) {
+    return (
+      <NexbotGuide
+        title="Welcome to CAM!"
+        subtitle="Register your project to start monitoring your Claude Code agents in real-time."
+        variant="default"
+      >
+        <div className="flex flex-col gap-2 mt-3 text-left">
+          <Step n={1}>
+            Run <Code>cam init</Code> in your project root
+          </Step>
+          <Step n={2}>
+            Start Claude Code in the same directory
+          </Step>
+          <Step n={3}>
+            Watch your agents appear here automatically
+          </Step>
+        </div>
+      </NexbotGuide>
+    );
+  }
+
+  // Case 1: No session selected — Project is ready
+  if (sessionStatus === null) {
+    return (
+      <NexbotGuide
+        title="Ready to Monitor"
+        subtitle="Your project is registered. Start a Claude Code session to see agents here."
+        variant="default"
+      >
+        <div className="flex flex-col gap-2 mt-3 text-left">
+          <Step n={1}>
+            Open a terminal in this project
+          </Step>
+          <Step n={2}>
+            Run <Code>claude</Code> to start Claude Code
+          </Step>
+          <Step n={3}>
+            Agents will appear here as they work
+          </Step>
+        </div>
+        <p className="text-zinc-600 text-[10px] font-mono mt-3">
+          Or select a previous session from the picker above
+        </p>
+      </NexbotGuide>
     );
   }
 
   // Case 2: SSE disconnected or reconnecting
   if (connectionStatus === 'disconnected' || connectionStatus === 'reconnecting') {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
-        {/* Warning icon */}
-        <svg
-          className="w-10 h-10 text-amber-500/70"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-          />
-        </svg>
-        {connectionStatus === 'reconnecting' ? (
-          <div className="flex items-center gap-2">
-            <span className="animate-pulse text-amber-400 text-sm font-mono">
-              Reconnecting...
+      <NexbotGuide
+        title={connectionStatus === 'reconnecting' ? 'Reconnecting...' : 'Connection Lost'}
+        subtitle="Trying to re-establish connection to the CAM server."
+        variant="warning"
+      >
+        {connectionStatus === 'reconnecting' && (
+          <div className="flex items-center gap-2 mt-2">
+            <div className="w-4 h-4 border-2 border-amber-500/40 border-t-transparent rounded-full animate-spin" />
+            <span className="text-amber-500/60 text-[10px] font-mono">
+              Retrying automatically...
             </span>
           </div>
-        ) : (
-          <span className="text-amber-500/80 text-sm font-mono">
-            Connection lost
-          </span>
         )}
-      </div>
+      </NexbotGuide>
     );
   }
 
@@ -277,59 +317,38 @@ function EmptyFloor({
       : null;
 
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 opacity-70">
-        {/* Checkmark or error icon */}
-        <svg
-          className={`w-10 h-10 ${sessionStatus === 'error' ? 'text-red-500/60' : 'text-zinc-600'}`}
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-        >
-          {sessionStatus === 'error' ? (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-            />
-          ) : (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          )}
-        </svg>
-        <span className="text-zinc-500 text-sm font-mono">
-          {sessionStatus === 'error' ? 'Session ended with errors' : 'Session ended'}
-        </span>
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-zinc-600 text-xs font-mono">
-            {totalAgentsEver} agent{totalAgentsEver !== 1 ? 's' : ''}, {eventCount} event{eventCount !== 1 ? 's' : ''}
+      <NexbotGuide
+        title={sessionStatus === 'error' ? 'Session Ended with Errors' : 'Session Completed'}
+        variant={sessionStatus === 'error' ? 'error' : 'success'}
+      >
+        <div className="flex flex-col items-center gap-1 mt-1">
+          <span className="text-zinc-500 text-xs font-mono">
+            {totalAgentsEver} agent{totalAgentsEver !== 1 ? 's' : ''} &middot; {eventCount} event{eventCount !== 1 ? 's' : ''}
           </span>
           {formattedStart && (
-            <span className="text-zinc-700 text-[10px] font-mono">
+            <span className="text-zinc-600 text-[10px] font-mono">
               started at {formattedStart}
             </span>
           )}
         </div>
-      </div>
+      </NexbotGuide>
     );
   }
 
   // Case 4: Session active, no agents yet
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-3">
-      {/* Pulse radar animation */}
-      <div className="relative flex items-center justify-center w-12 h-12">
-        <span className="animate-ping absolute inline-flex h-10 w-10 rounded-full bg-emerald-500/20" />
-        <span className="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-emerald-500/30" style={{ animationDelay: '0.5s' }} />
-        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500/60" />
+    <NexbotGuide
+      title="Listening for Agents..."
+      subtitle="Session is active. Waiting for agent activity."
+      variant="pulse"
+    >
+      {/* Pulse radar animation below NEXBOT */}
+      <div className="relative flex items-center justify-center w-8 h-8 mt-1">
+        <span className="animate-ping absolute inline-flex h-6 w-6 rounded-full bg-emerald-500/20" />
+        <span className="animate-ping absolute inline-flex h-4 w-4 rounded-full bg-emerald-500/30" style={{ animationDelay: '0.5s' }} />
+        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500/60" />
       </div>
-      <span className="text-zinc-500 text-sm font-mono">
-        Listening for agents...
-      </span>
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-1 mt-1">
         {sessionStartedAt && (
           <span className="text-zinc-600 text-xs font-mono">
             {formatElapsed(elapsedSeconds)} elapsed
@@ -343,6 +362,24 @@ function EmptyFloor({
       </div>
       <span className="text-zinc-700 text-[10px] font-mono mt-1">
         Run a Claude Code command to see agents here
+      </span>
+    </NexbotGuide>
+  );
+}
+
+/**
+ * Numbered step indicator for onboarding instructions.
+ */
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <span
+        className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold bg-violet-500/15 text-violet-400"
+      >
+        {n}
+      </span>
+      <span className="text-zinc-400 text-xs font-mono pt-0.5 leading-relaxed">
+        {children}
       </span>
     </div>
   );
@@ -370,6 +407,8 @@ export function MissionFloor({
   connectionStatus,
   eventCount,
   totalAgentsEver,
+  hasProject,
+  projectsLoaded,
 }: MissionFloorProps) {
   const { activeAgents, inactiveAgents } = useMemo(() => {
     const active: AgentMapPosition[] = [];
@@ -471,6 +510,8 @@ export function MissionFloor({
             connectionStatus={connectionStatus}
             eventCount={eventCount}
             totalAgentsEver={totalAgentsEver}
+            hasProject={hasProject}
+            projectsLoaded={projectsLoaded}
           />
         )}
       </div>

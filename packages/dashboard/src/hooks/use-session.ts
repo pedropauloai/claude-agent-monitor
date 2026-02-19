@@ -44,11 +44,17 @@ export function useSession() {
             return;
           }
         }
+
+        // No registered projects or no active sessions — don't fall back
+        // to random sessions from other projects. Let the onboarding show.
+        hasInitialized.current = true;
+        return;
       } catch {
-        // Registry not available, fall back
+        // Registry API not available — fall back to latest active session
+        // (legacy behavior for servers without project registry support)
       }
 
-      // 2. Fall back to latest active session
+      // 2. Fall back only when registry API is unavailable
       setProjectId(null);
       const { sessions } = await api.getSessions({ status: "active", limit: 1 });
       if (sessions.length > 0) {

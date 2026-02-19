@@ -5,6 +5,7 @@ export type ViewMode = 'agents' | 'tracker';
 
 interface ProjectState {
   projects: Project[];
+  projectsLoaded: boolean;
   activeProject: Project | null;
   activeSprint: Sprint | null;
   sprints: Sprint[];
@@ -13,6 +14,7 @@ interface ProjectState {
   selectedTaskId: string | null;
 
   setProjects: (projects: Project[]) => void;
+  setProjectsLoaded: (loaded: boolean) => void;
   setActiveProject: (project: Project | null) => void;
   setActiveSprint: (sprint: Sprint | null) => void;
   setSprints: (sprints: Sprint[]) => void;
@@ -27,6 +29,7 @@ interface ProjectState {
 
 export const useProjectStore = create<ProjectState>((set) => ({
   projects: [],
+  projectsLoaded: false,
   activeProject: null,
   activeSprint: null,
   sprints: [],
@@ -35,6 +38,7 @@ export const useProjectStore = create<ProjectState>((set) => ({
   selectedTaskId: null,
 
   setProjects: (projects) => set({ projects }),
+  setProjectsLoaded: (projectsLoaded) => set({ projectsLoaded }),
   setActiveProject: (activeProject) => set({ activeProject }),
   setActiveSprint: (activeSprint) => set({ activeSprint }),
   setSprints: (sprints) => set({ sprints }),
