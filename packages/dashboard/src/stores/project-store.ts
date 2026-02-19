@@ -35,7 +35,20 @@ export const useProjectStore = create<ProjectState>((set) => ({
   selectedTaskId: null,
 
   setProjects: (projects) => set({ projects }),
-  setActiveProject: (activeProject) => set({ activeProject }),
+  setActiveProject: (activeProject) =>
+    set((state) => {
+      // When switching to a different project, clear stale data
+      if (state.activeProject?.id !== activeProject?.id) {
+        return {
+          activeProject,
+          tasks: [],
+          sprints: [],
+          activeSprint: null,
+          selectedTaskId: null,
+        };
+      }
+      return { activeProject };
+    }),
   setActiveSprint: (activeSprint) => set({ activeSprint }),
   setSprints: (sprints) => set({ sprints }),
   setTasks: (tasks) => set({ tasks }),

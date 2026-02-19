@@ -94,9 +94,9 @@ export function ModernPRDOverview() {
     return (
       <div className="h-full flex items-center justify-center p-4">
         <div className="text-center">
-          <p className="text-xs text-cam-text-muted">PRD Overview</p>
+          <p className="text-xs text-cam-text-muted">Sprint Overview</p>
           <p className="text-[10px] text-cam-text-muted mt-1">
-            Import a PRD to see section progress
+            Import a sprint to see section progress
           </p>
         </div>
       </div>
@@ -107,7 +107,7 @@ export function ModernPRDOverview() {
     <div className="p-3 space-y-2">
       <div className="flex items-center justify-between mb-2">
         <span className="text-[10px] uppercase tracking-wider text-cam-text-muted font-medium">
-          PRD Sections
+          Sprint Sections
         </span>
         <span className="text-[10px] text-cam-text-secondary">
           {activeProject?.name}

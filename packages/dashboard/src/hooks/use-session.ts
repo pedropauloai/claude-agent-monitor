@@ -16,6 +16,13 @@ export function useSession() {
   // Track whether user has manually selected a session (or initial load happened)
   const hasInitialized = useRef(false);
 
+  // When session is reset to null (e.g. project switch), allow re-initialization
+  useEffect(() => {
+    if (session === null) {
+      hasInitialized.current = false;
+    }
+  }, [session]);
+
   const loadSession = useCallback(async () => {
     // If a session is already selected (initial load done or user picked one), don't override
     if (hasInitialized.current) return;

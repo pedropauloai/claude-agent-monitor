@@ -1,6 +1,6 @@
 {
   "name": "@claudecam/cli",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "description": "CLI for Claude Agent Monitor - Mission Control for Claude Code agents",
   "license": "MIT",
   "type": "module",

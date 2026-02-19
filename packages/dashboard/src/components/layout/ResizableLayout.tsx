@@ -218,15 +218,12 @@ export function ResizeHandle({
 }: ResizeHandleProps) {
   const theme = useSettingsStore((s) => s.theme);
 
-  if (disabled) {
-    return null;
-  }
-
   const isHorizontal = direction === 'horizontal';
 
   return (
     <PanelResizeHandle
-      className={`${getHandleClasses(theme, isHorizontal)}${className ? ` ${className}` : ''}`}
+      disabled={disabled}
+      className={`${getHandleClasses(theme, isHorizontal)}${className ? ` ${className}` : ''}${disabled ? ' pointer-events-none opacity-30' : ''}`}
       style={getHandleStyle(theme, isHorizontal)}
     >
       <HandleIndicator theme={theme} isHorizontal={isHorizontal} />

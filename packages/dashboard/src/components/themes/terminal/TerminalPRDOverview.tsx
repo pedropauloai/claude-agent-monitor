@@ -107,8 +107,8 @@ export function TerminalPRDOverview() {
     return (
       <div className="h-full flex items-center justify-center font-mono text-[11px]">
         <div className="terminal-dim text-center">
-          <p>{'## PRD OVERVIEW ##'}</p>
-          <p className="mt-1">{'> Import a PRD to see section progress'}</p>
+          <p>{'## SPRINT OVERVIEW ##'}</p>
+          <p className="mt-1">{'> Import a sprint to see section progress'}</p>
         </div>
       </div>
     );
@@ -117,7 +117,7 @@ export function TerminalPRDOverview() {
   return (
     <div className="p-2 font-mono text-[11px]">
       <div className="flex items-center justify-between mb-2">
-        <span className="terminal-muted">{'## PRD SECTIONS ##'}</span>
+        <span className="terminal-muted">{'## SPRINT SECTIONS ##'}</span>
         <span className="text-[#00ccff] text-[10px]">{activeProject?.name}</span>
       </div>
 

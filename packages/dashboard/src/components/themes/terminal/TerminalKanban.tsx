@@ -52,8 +52,8 @@ export function TerminalKanban() {
         <div className="terminal-dim text-center">
           <pre className="text-[10px]">{
 `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
-\u2502  No PRD tasks loaded  \u2502
-\u2502  Import a PRD first   \u2502
+\u2502  No tasks loaded  \u2502
+\u2502  Import a sprint   \u2502
 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`
           }</pre>
         </div>

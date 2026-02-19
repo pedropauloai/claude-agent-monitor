@@ -107,7 +107,7 @@ function AgentsLayout() {
   const lockPanels = useSettingsStore((s) => s.lockPanels);
 
   return (
-    <HorizontalLayout id="modern-agents">
+    <HorizontalLayout id="modern-agents-v2">
       <ResizablePanel defaultSize={20} minSize={10} maxSize={25} order={1}>
         <aside className="h-full overflow-y-auto modern-scrollbar">
           <ModernAgentPanel />

@@ -285,7 +285,10 @@ export function ProjectSidebar({
   const projectIdFromSession = useSessionStore((s) => s.projectId);
 
   function handleSelectProject(project: Project) {
+    if (activeProject?.id === project.id) return; // Already selected
     setActiveProject(project);
+    // Reset session store so the session hook re-fetches for the new project
+    useSessionStore.getState().reset();
   }
 
   const hasRecentEvents = useMemo(() => {
