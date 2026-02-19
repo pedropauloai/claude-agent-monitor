@@ -1,5 +1,5 @@
 {
-  "name": "claudecam",
+  "name": "@claudecam/cli",
   "version": "0.1.0",
   "description": "CLI for Claude Agent Monitor - Mission Control for Claude Code agents",
   "license": "MIT",
