@@ -1,6 +1,6 @@
 {
   "name": "@claudecam/dashboard",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "React dashboard for Claude Agent Monitor",
   "license": "MIT",
   "type": "module",
