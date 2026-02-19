@@ -114,7 +114,7 @@ function AgentsLayout() {
         </aside>
       </ResizablePanel>
       <ResizeHandle disabled={lockPanels} />
-      <ResizablePanel defaultSize={55} minSize={30} order={2}>
+      <ResizablePanel defaultSize={55} minSize={30} maxSize={75} order={2}>
         <main className="h-full overflow-hidden">
           <AgentMap3D />
         </main>

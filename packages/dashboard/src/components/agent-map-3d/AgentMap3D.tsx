@@ -24,10 +24,10 @@ import '../agent-map/agent-map.css';
 function WelcomeStep({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2.5">
-      <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold bg-violet-500/15 text-violet-400">
+      <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-mono font-bold bg-violet-500/20 text-violet-400">
         {n}
       </span>
-      <span className="text-zinc-400 text-xs font-mono pt-0.5 leading-relaxed">
+      <span className="text-zinc-300 text-sm font-mono pt-0.5 leading-relaxed">
         {children}
       </span>
     </div>
@@ -335,31 +335,20 @@ export function AgentMap3D() {
       <div className="flex flex-col h-full overflow-hidden relative">
         <AgentMapHeader />
         <div
-          className="flex-1 relative overflow-hidden flex items-center justify-center"
+          className="flex-1 relative overflow-hidden"
           style={{ background: 'radial-gradient(ellipse at center, #0f0f1a 0%, #0a0a12 70%)' }}
         >
-          {/* Subtle grid */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: [
-                'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px)',
-                'linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
-              ].join(','),
-              backgroundSize: '40px 40px',
-            }}
-          />
           <NexbotGuide
             title="Welcome to CAM!"
             subtitle="Start a Claude Code session to see your agents here in real-time."
             variant="default"
           >
-            <div className="flex flex-col gap-2 mt-3 text-left">
+            <div className="flex flex-col gap-2.5 mt-3 text-left">
               <WelcomeStep n={1}>Open a terminal in this project</WelcomeStep>
-              <WelcomeStep n={2}>Run <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-violet-300 text-[11px] font-mono">claude</code> to start Claude Code</WelcomeStep>
+              <WelcomeStep n={2}>Run <code className="px-1.5 py-0.5 rounded bg-zinc-800 text-violet-300 text-xs font-mono">claude</code> to start Claude Code</WelcomeStep>
               <WelcomeStep n={3}>Agents will appear here as they work</WelcomeStep>
             </div>
-            <p className="text-zinc-600 text-[10px] font-mono mt-3">
+            <p className="text-zinc-500 text-xs font-mono mt-3">
               Or select a previous session from the picker above
             </p>
           </NexbotGuide>

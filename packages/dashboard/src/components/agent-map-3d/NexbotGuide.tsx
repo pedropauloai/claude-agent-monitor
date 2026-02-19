@@ -4,7 +4,7 @@ import { SPLINE_URLS } from './scene-constants.js';
 
 /**
  * Minimal type for accessing Spline runtime internals.
- * Used to disable the watermark shader pass.
+ * Used to disable the watermark shader pass and adjust camera zoom.
  */
 interface SplineInternals {
   _renderer?: {
@@ -14,13 +14,8 @@ interface SplineInternals {
     };
   };
   play?: () => void;
+  setZoom?: (zoom: number) => void;
 }
-
-/** Visual size of the NEXBOT guide in pixels */
-const GUIDE_SIZE = 160;
-/** Internal render scale for crisp rendering */
-const RENDER_SCALE = 2;
-const RENDER_SIZE = GUIDE_SIZE * RENDER_SCALE;
 
 const VARIANT_STYLES = {
   default: { accent: '#8b5cf6', text: 'text-violet-400' },
@@ -42,11 +37,11 @@ interface NexbotGuideProps {
 }
 
 /**
- * NexbotGuide - Standalone NEXBOT 3D robot for onboarding and empty states.
+ * NexbotGuide - Full-screen NEXBOT 3D robot for onboarding and empty states.
  *
- * Renders a Spline NEXBOT model centered with instruction text below.
+ * Renders the Spline NEXBOT model filling the entire container with
+ * instruction text overlaid at the bottom via gradient fade.
  * The robot follows the mouse cursor for an interactive feel.
- * Used in all Agent Map empty states to give a professional, branded experience.
  */
 export function NexbotGuide({
   title,
@@ -70,6 +65,13 @@ export function NexbotGuide({
       pipeline?.setWatermark(null);
     } catch {
       // Internal API may change between runtime versions
+    }
+
+    // Zoom in for a close-up of the robot's head
+    try {
+      internals.setZoom?.(1.8);
+    } catch {
+      // setZoom may not exist in all runtime versions
     }
 
     // Restart animation loop after pipeline modification
@@ -122,18 +124,17 @@ export function NexbotGuide({
   }, [isLoading]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full gap-5 px-6">
-      {/* NEXBOT 3D Model */}
+    <div className="relative w-full h-full overflow-hidden">
+      {/* NEXBOT 3D Model — fills entire area */}
       <div
         ref={containerRef}
-        className="relative overflow-hidden shrink-0"
-        style={{ width: GUIDE_SIZE, height: GUIDE_SIZE }}
+        className="absolute inset-0"
       >
         {/* Loading spinner */}
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center z-10">
             <div
-              className="w-8 h-8 border-2 rounded-full animate-spin"
+              className="w-10 h-10 border-2 rounded-full animate-spin"
               style={{
                 borderColor: `${colors.accent}30`,
                 borderTopColor: 'transparent',
@@ -142,49 +143,49 @@ export function NexbotGuide({
           </div>
         )}
 
-        {/* Spline canvas at 2x for crisp rendering */}
-        <div
+        <Spline
+          scene={SPLINE_URLS.main}
+          onLoad={handleLoad}
           style={{
-            width: RENDER_SIZE,
-            height: RENDER_SIZE,
-            transform: `scale(${1 / RENDER_SCALE})`,
-            transformOrigin: 'top left',
+            width: '100%',
+            height: '100%',
+            opacity: isLoading ? 0 : 1,
+            transition: 'opacity 0.8s ease-in',
           }}
-        >
-          <Spline
-            scene={SPLINE_URLS.main}
-            onLoad={handleLoad}
-            style={{
-              width: '100%',
-              height: '100%',
-              opacity: isLoading ? 0 : 1,
-              transition: 'opacity 0.5s ease-in',
-            }}
-          />
-        </div>
-
-        {/* Ambient glow around the robot */}
-        {!isLoading && (
-          <div
-            className="absolute inset-[-6px] rounded-2xl pointer-events-none transition-all duration-700"
-            style={{
-              boxShadow: `0 0 20px ${colors.accent}25, 0 0 40px ${colors.accent}10`,
-            }}
-          />
-        )}
+        />
       </div>
 
-      {/* Instruction text */}
-      <div className="flex flex-col items-center gap-2 max-w-sm text-center">
-        <h3 className={`${colors.text} text-sm font-mono font-semibold`}>
+      {/* Gradient overlay for text readability */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(to top, rgba(10,10,18,0.95) 0%, rgba(10,10,18,0.6) 25%, transparent 50%)',
+        }}
+      />
+
+      {/* Ambient glow */}
+      {!isLoading && (
+        <div
+          className="absolute inset-0 pointer-events-none transition-all duration-1000"
+          style={{
+            boxShadow: `inset 0 0 80px ${colors.accent}08, inset 0 0 160px ${colors.accent}04`,
+          }}
+        />
+      )}
+
+      {/* Instruction text — anchored to bottom */}
+      <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-2.5 p-8 pb-10 pointer-events-none">
+        <h3 className={`${colors.text} text-lg font-mono font-semibold`}>
           {title}
         </h3>
         {subtitle && (
-          <p className="text-zinc-500 text-xs font-mono leading-relaxed">
+          <p className="text-zinc-400 text-sm font-mono leading-relaxed max-w-md text-center">
             {subtitle}
           </p>
         )}
-        {children}
+        <div className="pointer-events-auto">
+          {children}
+        </div>
       </div>
     </div>
   );
