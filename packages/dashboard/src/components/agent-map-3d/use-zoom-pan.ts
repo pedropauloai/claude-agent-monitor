@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect, type RefObject } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { MIN_ZOOM, MAX_ZOOM } from './scene-constants.js';
 
 /**
@@ -36,7 +36,7 @@ interface UseZoomPanResult {
 const DEFAULT_STATE: ZoomPanState = { zoom: 1, panX: 0, panY: 0 };
 
 export function useZoomPan(
-  containerRef: RefObject<HTMLDivElement | null>,
+  container: HTMLDivElement | null,
 ): UseZoomPanResult {
   const [state, setState] = useState<ZoomPanState>(DEFAULT_STATE);
   const [isPanning, setIsPanning] = useState(false);
@@ -49,7 +49,6 @@ export function useZoomPan(
 
   // ---- Wheel zoom (attached via native listener for { passive: false }) ----
   useEffect(() => {
-    const container = containerRef.current;
     if (!container) return;
 
     function onWheel(e: WheelEvent) {
@@ -83,7 +82,7 @@ export function useZoomPan(
     // can intercept the event. Non-passive to allow preventDefault.
     container.addEventListener('wheel', onWheel, { passive: false, capture: true });
     return () => container.removeEventListener('wheel', onWheel, { capture: true });
-  }, [containerRef]);
+  }, [container]);
 
   // ---- Pan: mouse down ----
   const handleMouseDown = useCallback((e: React.MouseEvent) => {

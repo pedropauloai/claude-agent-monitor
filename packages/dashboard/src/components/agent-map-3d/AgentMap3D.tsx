@@ -49,8 +49,13 @@ export function AgentMap3D() {
   // Sync server data to the agent-map store
   useAgentMapSync();
 
-  // Refs
+  // Refs — callback ref pattern so useZoomPan re-attaches when the element mounts
   const missionFloorRef = useRef<HTMLDivElement>(null);
+  const [missionFloorEl, setMissionFloorEl] = useState<HTMLDivElement | null>(null);
+  const missionFloorCallbackRef = useCallback((node: HTMLDivElement | null) => {
+    missionFloorRef.current = node;
+    setMissionFloorEl(node);
+  }, []);
 
   // Session store data
   const session = useSessionStore((s) => s.session);
@@ -74,7 +79,7 @@ export function AgentMap3D() {
     isPanning,
     handleMouseDown: handleZoomPanMouseDown,
     reset: resetZoomPan,
-  } = useZoomPan(missionFloorRef);
+  } = useZoomPan(missionFloorEl);
 
   // Drag & drop state — use refs for values needed in global handlers to avoid stale closures
   const [dragAgentId, setDragAgentId] = useState<string | null>(null);
@@ -194,8 +199,7 @@ export function AgentMap3D() {
 
   // Recalculate on container resize
   useEffect(() => {
-    const container = missionFloorRef.current;
-    if (!container) return;
+    if (!missionFloorEl) return;
 
     const obs = new ResizeObserver((entries) => {
       const { width, height } = entries[0].contentRect;
@@ -203,9 +207,9 @@ export function AgentMap3D() {
         setContainerSize({ w: width, h: height });
       }
     });
-    obs.observe(container);
+    obs.observe(missionFloorEl);
     return () => obs.disconnect();
-  }, []);
+  }, [missionFloorEl]);
 
   // Cleanup stale entries from customPositions when agents leave
   useEffect(() => {
@@ -370,7 +374,7 @@ export function AgentMap3D() {
 
       {/* Mission Floor */}
       <div
-        ref={missionFloorRef}
+        ref={missionFloorCallbackRef}
         className="flex-1 relative overflow-hidden"
         style={{
           background: 'radial-gradient(ellipse at center, #0f0f1a 0%, #0a0a12 70%)',

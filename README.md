@@ -61,11 +61,6 @@ CAM was built for developers who use **Claude Code** (with Opus model) to build 
 
 ```bash
 cd your-project
-
-# Initialize hooks + project registration
-npx @claudecam/cli init
-
-# Start server + dashboard (opens browser)
 npx @claudecam/cli start
 
 # In another terminal, use Claude Code normally
@@ -80,14 +75,15 @@ claude "implement the auth module"
 npm install -g @claudecam/cli
 
 cd your-project
-cam init
 cam start
 
 # In another terminal
 claude "implement the auth module"
 ```
 
-That's it. Two commands and you have full observability.
+`cam start` automatically configures hooks, scaffolds doc templates, and registers the project. No separate `init` step needed.
+
+That's it. One command and you have full observability.
 
 ### Adding Sprint Tracking (optional)
 

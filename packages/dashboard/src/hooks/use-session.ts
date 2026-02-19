@@ -38,14 +38,14 @@ export function useSession() {
           const { sessions } = await api.getProjectSessions(activeReg.project_id);
 
           if (sessions.length > 0) {
-            // Prefer active session, fall back to most recent (already sorted by started_at DESC)
+            // Only auto-select active sessions — completed sessions show the welcome screen
             const activeSession = sessions.find((s: Record<string, unknown>) => s.status === "active");
-            const bestSession = activeSession || sessions[0];
-
-            const { session: fullSession } = await api.getSession(bestSession.id as string);
-            setSession(fullSession);
-            hasInitialized.current = true;
-            return;
+            if (activeSession) {
+              const { session: fullSession } = await api.getSession(activeSession.id as string);
+              setSession(fullSession);
+              hasInitialized.current = true;
+              return;
+            }
           }
 
           // Project exists but has no sessions yet.
@@ -56,15 +56,15 @@ export function useSession() {
         // Registry API not available — fall through to global fallback
       }
 
-      // 2. Fallback: latest session globally (no project filter)
+      // 2. Fallback: latest active session globally (no project filter)
       setProjectId(null);
-      const { sessions } = await api.getSessions({ limit: 1 });
+      const { sessions } = await api.getSessions({ status: "active", limit: 1 });
       if (sessions.length > 0) {
         const { session: latestSession } = await api.getSession(sessions[0].id);
         setSession(latestSession);
         hasInitialized.current = true;
       }
-      // No sessions at all — keep polling (show welcome screen)
+      // No active sessions — keep polling (show welcome screen)
     } catch {
       // API not available - retry on next interval
     }
