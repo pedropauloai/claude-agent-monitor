@@ -1,6 +1,6 @@
 {
   "name": "@claudecam/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "CLI for Claude Agent Monitor - Mission Control for Claude Code agents",
   "license": "MIT",
   "type": "module",
@@ -8,6 +8,7 @@
   "types": "./dist/index.d.ts",
   "bin": {
     "cam": "./dist/index.js",
+    "cli": "./dist/index.js",
     "cam-hook": "./dist/cam-hook.js"
   },
   "exports": {
