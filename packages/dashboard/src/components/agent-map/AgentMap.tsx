@@ -1,7 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { useSessionStore } from "../../stores/session-store";
 import { useAgentMapStore } from "../../stores/agent-map-store";
-import { useProjectStore } from "../../stores/project-store";
 import { AgentMapHeader } from "./AgentMapHeader";
 import { MissionFloor } from "./MissionFloor";
 import { InteractionLines } from "./InteractionLines";
@@ -19,8 +18,6 @@ export function AgentMap() {
   const selectAgent = useSessionStore((s) => s.selectAgent);
   const { positions, speechBubbles, interactionLines, showInteractions } =
     useAgentMapStore();
-  const projects = useProjectStore((s) => s.projects);
-  const projectsLoaded = useProjectStore((s) => s.projectsLoaded);
 
   const agentNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -97,8 +94,6 @@ export function AgentMap() {
           connectionStatus={connectionStatus}
           eventCount={events.length}
           totalAgentsEver={session?.agentCount ?? 0}
-          hasProject={projects.length > 0}
-          projectsLoaded={projectsLoaded}
         />
 
         {/* Parent-child hierarchy lines (subtle dotted) */}

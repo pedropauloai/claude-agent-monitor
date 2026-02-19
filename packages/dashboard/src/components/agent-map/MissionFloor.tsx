@@ -20,8 +20,6 @@ interface MissionFloorProps {
   connectionStatus: ConnectionStatus;
   eventCount: number;
   totalAgentsEver: number;
-  hasProject: boolean;
-  projectsLoaded: boolean;
 }
 
 /** Animation states considered "active" (agent is doing something) */
@@ -196,16 +194,12 @@ function EmptyFloor({
   connectionStatus,
   eventCount,
   totalAgentsEver,
-  hasProject,
-  projectsLoaded,
 }: {
   sessionStatus: 'active' | 'completed' | 'error' | null;
   sessionStartedAt: string | null;
   connectionStatus: ConnectionStatus;
   eventCount: number;
   totalAgentsEver: number;
-  hasProject: boolean;
-  projectsLoaded: boolean;
 }) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -230,45 +224,12 @@ function EmptyFloor({
     return () => clearInterval(interval);
   }, [sessionStatus, sessionStartedAt]);
 
-  // Loading state: projects haven't been fetched yet
-  if (!projectsLoaded) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
-        <div className="w-8 h-8 border-2 border-zinc-700 border-t-transparent rounded-full animate-spin" />
-        <span className="text-zinc-600 text-xs font-mono">Loading...</span>
-      </div>
-    );
-  }
-
-  // Case 0: No project registered — Welcome onboarding
-  if (!hasProject) {
-    return (
-      <NexbotGuide
-        title="Welcome to CAM!"
-        subtitle="Register your project to start monitoring your Claude Code agents in real-time."
-        variant="default"
-      >
-        <div className="flex flex-col gap-2 mt-3 text-left">
-          <Step n={1}>
-            Run <Code>cam init</Code> in your project root
-          </Step>
-          <Step n={2}>
-            Start Claude Code in the same directory
-          </Step>
-          <Step n={3}>
-            Watch your agents appear here automatically
-          </Step>
-        </div>
-      </NexbotGuide>
-    );
-  }
-
-  // Case 1: No session selected — Project is ready
+  // Case 1: No session — Welcome / Start Claude Code
   if (sessionStatus === null) {
     return (
       <NexbotGuide
-        title="Ready to Monitor"
-        subtitle="Your project is registered. Start a Claude Code session to see agents here."
+        title="Welcome to CAM!"
+        subtitle="Start a Claude Code session to see your agents here in real-time."
         variant="default"
       >
         <div className="flex flex-col gap-2 mt-3 text-left">
@@ -407,8 +368,6 @@ export function MissionFloor({
   connectionStatus,
   eventCount,
   totalAgentsEver,
-  hasProject,
-  projectsLoaded,
 }: MissionFloorProps) {
   const { activeAgents, inactiveAgents } = useMemo(() => {
     const active: AgentMapPosition[] = [];
@@ -510,8 +469,6 @@ export function MissionFloor({
             connectionStatus={connectionStatus}
             eventCount={eventCount}
             totalAgentsEver={totalAgentsEver}
-            hasProject={hasProject}
-            projectsLoaded={projectsLoaded}
           />
         )}
       </div>

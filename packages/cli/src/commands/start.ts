@@ -3,11 +3,12 @@ import chalk from "chalk";
 import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { existsSync } from "node:fs";
 import { DEFAULT_SERVER_PORT, DEFAULT_DASHBOARD_PORT } from "@claudecam/shared";
 import { logger } from "../utils/logger.js";
 import {
+  readConfig,
   writeConfig,
   claudeSettingsExist,
   readClaudeSettings,
@@ -179,18 +180,21 @@ export const startCommand = new Command("start")
         process.exit(0);
       });
 
-      // Open browser after server is ready
-      if (options.open) {
-        const browserUrl = dashboardDistPath
-          ? `http://localhost:${serverPort}`
-          : `http://localhost:${dashboardPort}`;
+      // After server is ready: register project + open browser
+      const browserUrl = dashboardDistPath
+        ? `http://localhost:${serverPort}`
+        : `http://localhost:${dashboardPort}`;
 
-        waitForServer(serverPort, 10_000).then((ready) => {
-          if (ready) {
-            openBrowser(browserUrl);
-          }
-        });
-      }
+      waitForServer(serverPort, 10_000).then(async (ready) => {
+        if (!ready) return;
+
+        // Auto-register project so the dashboard knows about it
+        await autoRegisterProject(serverPort);
+
+        if (options.open) {
+          openBrowser(browserUrl);
+        }
+      });
 
       logger.info("Waiting for Claude Code events...");
       logger.info(chalk.gray("(Press Ctrl+C to stop)"));
@@ -300,6 +304,76 @@ function autoInitHooks(): void {
 
   if (hooksConfigured || docsResult.created.length > 0) {
     logger.blank();
+  }
+}
+
+async function autoRegisterProject(port: number): Promise<void> {
+  const cwd = process.cwd();
+
+  try {
+    // Check if already registered
+    const lookupRes = await fetch(
+      `http://localhost:${port}/api/registry/lookup?dir=${encodeURIComponent(cwd)}`,
+    );
+    if (lookupRes.ok) {
+      const data = (await lookupRes.json()) as { project_id?: string };
+      if (data.project_id) {
+        // Already registered — save to config
+        const config = readConfig();
+        writeConfig({ ...config, activeProjectId: data.project_id });
+        return;
+      }
+    }
+  } catch {
+    // Lookup failed, try to create
+  }
+
+  // Create project
+  let projectId: string | null = null;
+  try {
+    const projName = basename(cwd);
+    const response = await fetch(`http://localhost:${port}/api/projects`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: projName, prd_content: "" }),
+    });
+
+    if (response.ok) {
+      const data = (await response.json()) as {
+        project?: { id: string; name: string };
+      };
+      if (data.project) {
+        projectId = data.project.id;
+        logger.success(`Project registered: ${chalk.cyan(data.project.name)}`);
+      }
+    }
+  } catch {
+    // Project creation failed silently
+  }
+
+  // Register working directory
+  if (projectId) {
+    try {
+      await fetch(`http://localhost:${port}/api/registry`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          working_directory: cwd,
+          project_id: projectId,
+          prd_path: null,
+        }),
+      });
+    } catch {
+      // Registry failed silently
+    }
+
+    // Save to local config
+    try {
+      const config = readConfig();
+      writeConfig({ ...config, activeProjectId: projectId });
+    } catch {
+      // Config save failed silently
+    }
   }
 }
 

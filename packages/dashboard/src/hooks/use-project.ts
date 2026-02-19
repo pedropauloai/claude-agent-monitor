@@ -3,7 +3,7 @@ import { useProjectStore } from '../stores/project-store';
 import * as api from '../lib/api';
 
 export function useProject() {
-  const { projects, activeProject, setProjects, setActiveProject, setProjectsLoaded } = useProjectStore();
+  const { projects, activeProject, setProjects, setActiveProject } = useProjectStore();
   const hasSetDefault = useRef(false);
 
   useEffect(() => {
@@ -14,7 +14,6 @@ export function useProject() {
         const { projects: data } = await api.getProjects();
         if (!cancelled) {
           setProjects(data);
-          setProjectsLoaded(true);
           // Define projeto padrao apenas uma vez (se nenhum foi selecionado)
           if (!hasSetDefault.current && data.length > 0) {
             const current = useProjectStore.getState().activeProject;
