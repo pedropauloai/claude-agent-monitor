@@ -15,10 +15,10 @@ Before proposing changes:
 
 Output a structured plan with:
 - Files to create/modify (with full paths)
-- Type changes needed in @cam/shared
+- Type changes needed in @claudecam/shared
 - Database migrations needed
 - API endpoints affected
 - Dashboard components affected
 - Dependencies between changes
 
-MUST maintain: ESM only, zero deps in @cam/hook, SSE for real-time, SQLite WAL mode.
+MUST maintain: ESM only, zero deps in @claudecam/hook, SSE for real-time, SQLite WAL mode.

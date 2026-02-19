@@ -2,7 +2,7 @@ import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { useSessionStore } from '../../stores/session-store.js';
 import { useAgentMapStore } from '../../stores/agent-map-store.js';
 import { useAgentMapSync } from '../../hooks/use-agent-map-sync.js';
-import { getAgentPalette } from '@cam/shared';
+import { getAgentPalette } from '@claudecam/shared';
 import { getAgentDisplayName } from '../../lib/friendly-names.js';
 import { AgentMapHeader } from '../agent-map/AgentMapHeader.js';
 import { SplineAgent } from './SplineAgent.js';
@@ -14,7 +14,7 @@ import type { IndicatorAgent } from './R3FOverlay.js';
 import { useAgentLayout, type AgentLayout3D } from './use-agent-layout.js';
 import { useZoomPan } from './use-zoom-pan.js';
 import { AGENT_CARD_SIZE, CARD_GAP, CARD_TOTAL_HEIGHT } from './scene-constants.js';
-import type { SpeechBubbleData } from '@cam/shared';
+import type { SpeechBubbleData } from '@claudecam/shared';
 import { SpeechBubble } from '../agent-map/SpeechBubble.js';
 
 // Reuse existing agent-map CSS for speech bubbles, tool trail, etc.

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { createSprintRequestSchema } from '@cam/shared';
+import { createSprintRequestSchema } from '@claudecam/shared';
 import {
   listSprints,
   createSprint,

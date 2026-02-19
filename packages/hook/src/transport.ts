@@ -1,7 +1,7 @@
 import { request } from "node:http";
 import { readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { DEFAULT_SERVER_PORT, DEFAULT_HOST } from "@cam/shared";
+import { DEFAULT_SERVER_PORT, DEFAULT_HOST } from "@claudecam/shared";
 
 /**
  * Debug logging via CAM_DEBUG=1 environment variable.

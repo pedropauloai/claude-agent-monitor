@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react';
-import type { AgentMapPosition, AgentAnimationState, SpeechBubbleData } from '@cam/shared';
+import type { AgentMapPosition, AgentAnimationState, SpeechBubbleData } from '@claudecam/shared';
 import type { ConnectionStatus } from '../../stores/session-store';
 import { AgentCard } from './AgentCard';
 import { SpeechBubble } from './SpeechBubble';

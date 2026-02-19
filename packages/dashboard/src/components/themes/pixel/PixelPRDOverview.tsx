@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useProjectStore } from '../../../stores/project-store';
-import type { PRDTask, Sprint } from '@cam/shared';
+import type { PRDTask, Sprint } from '@claudecam/shared';
 
 const QUEST_STATUS_ICONS: Record<string, { icon: string; color: string }> = {
   backlog: { icon: '\u25CB', color: 'var(--pixel-text-dim)' },

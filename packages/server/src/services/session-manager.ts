@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Session } from '@cam/shared';
+import type { Session } from '@claudecam/shared';
 import { sessionQueries, agentQueries, eventQueries } from '../db/queries.js';
 
 interface SessionRow {

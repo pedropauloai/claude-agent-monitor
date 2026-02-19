@@ -7,7 +7,7 @@ import {
   generateIdenticon,
 } from "../../../lib/formatters";
 import { getAgentDisplayName } from "../../../lib/friendly-names.js";
-import type { Agent } from "@cam/shared";
+import type { Agent } from "@claudecam/shared";
 
 /** Agents with status 'active' are considered active; all others are inactive */
 function isActiveAgent(agent: Agent): boolean {

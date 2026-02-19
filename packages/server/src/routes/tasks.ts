@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { updateTaskRequestSchema, createTaskRequestSchema } from '@cam/shared';
+import { updateTaskRequestSchema, createTaskRequestSchema } from '@claudecam/shared';
 import {
   listTasks,
   getTask,

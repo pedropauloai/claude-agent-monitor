@@ -1,6 +1,6 @@
 import Spline from '@splinetool/react-spline';
 import { useState, useCallback, useRef, useEffect, memo } from 'react';
-import type { AgentPose, AgentAnimationState } from '@cam/shared';
+import type { AgentPose, AgentAnimationState } from '@claudecam/shared';
 import { SPLINE_URLS, AGENT_CARD_SIZE, SPLINE_RENDER_SCALE } from './scene-constants.js';
 
 /** Spline canvas renders at this size for zoom clarity */

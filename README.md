@@ -203,30 +203,30 @@ The hook binary is ultra-fast (< 10ms) and fails silently. It **never** blocks C
 ### Monorepo Structure
 
 ```
-                          +------------------+
-                          |   @cam/shared    |
-                          |   Types, Schemas |
-                          +--------+---------+
-                                   |
-                     used by all packages below
-                                   |
-          +------------+-----------+-----------+------------+
-          |            |                       |            |
-          v            v                       v            v
-   +------------+ +------------+       +------------+ +------------+
-   | @cam/hook  | | @cam/cli   |       | @cam/server| | @cam/      |
-   | Hook binary| | Terminal   |------>| API + DB   |-->| dashboard |
-   | (zero deps)| | commands   |       | + SSE      | | React UI   |
-   +------------+ +------------+       +------------+ +------------+
+                          +---------------------+
+                          | @claudecam/shared   |
+                          |   Types, Schemas    |
+                          +---------+-----------+
+                                    |
+                      used by all packages below
+                                    |
+          +-------------+-----------+-----------+--------------+
+          |             |                       |              |
+          v             v                       v              v
+   +--------------+ +------------+       +--------------+ +--------------+
+   | @claudecam/  | | claudecam  |       | @claudecam/  | | @claudecam/  |
+   | hook         | | CLI        |------>| server       |-->| dashboard  |
+   | (zero deps)  | | commands   |       | API + DB+SSE | | React UI     |
+   +--------------+ +------------+       +--------------+ +--------------+
 ```
 
 | Package | Description | Key Tech |
 |---------|-------------|----------|
-| `@cam/shared` | Types, Zod schemas, constants | TypeScript, Zod |
-| `@cam/hook` | Ultra-light CLI binary for hooks (zero external deps) | Native Node.js `http` |
-| `@cam/server` | REST API + SSE + SQLite persistence | Express, better-sqlite3 |
-| `@cam/cli` | CLI commands (`cam init`, `cam start`, etc.) | Commander.js, Chalk |
-| `@cam/dashboard` | React SPA with 3 themes | React 19, Vite, Tailwind CSS, Zustand |
+| `@claudecam/shared` | Types, Zod schemas, constants | TypeScript, Zod |
+| `@claudecam/hook` | Ultra-light CLI binary for hooks (zero external deps) | Native Node.js `http` |
+| `@claudecam/server` | REST API + SSE + SQLite persistence | Express, better-sqlite3 |
+| `claudecam` | CLI commands (`cam init`, `cam start`, etc.) | Commander.js, Chalk |
+| `@claudecam/dashboard` | React SPA with 3 themes | React 19, Vite, Tailwind CSS, Zustand |
 
 ### Server API Endpoints
 
@@ -461,11 +461,11 @@ pnpm clean         # Remove all dist/ directories
 ### Building Individual Packages
 
 ```bash
-pnpm --filter @cam/shared build      # Must build first (other packages depend on it)
-pnpm --filter @cam/server build
-pnpm --filter @cam/hook build
-pnpm --filter @cam/cli build
-pnpm --filter @cam/dashboard build
+pnpm --filter @claudecam/shared build      # Must build first (other packages depend on it)
+pnpm --filter @claudecam/server build
+pnpm --filter @claudecam/hook build
+pnpm --filter claudecam build
+pnpm --filter @claudecam/dashboard build
 ```
 
 ### Project Conventions
@@ -474,8 +474,8 @@ pnpm --filter @cam/dashboard build
 - All imports use `.js` extension
 - Named exports only (no default exports, except React page components)
 - TypeScript strict mode, no `any`, use `unknown` + type guards
-- Shared types live in `@cam/shared` -- never duplicate types across packages
-- `@cam/hook` must remain zero-dependency (only native Node.js modules)
+- Shared types live in `@claudecam/shared` -- never duplicate types across packages
+- `@claudecam/hook` must remain zero-dependency (only native Node.js modules)
 - SSE for real-time updates, never WebSockets
 - SQLite in WAL mode for concurrent reads
 - Conventional commits: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`
@@ -556,9 +556,9 @@ Contributions are welcome! Here is how to get started:
 
 ### Key Rules
 
-- `@cam/shared` must be built before any other package
-- Types go in `@cam/shared` first, then import them elsewhere
-- `@cam/hook` must remain zero-dependency (only native Node.js modules)
+- `@claudecam/shared` must be built before any other package
+- Types go in `@claudecam/shared` first, then import them elsewhere
+- `@claudecam/hook` must remain zero-dependency (only native Node.js modules)
 - New API routes follow the Express router pattern in `packages/server/src/routes/`
 - New dashboard components go in the appropriate theme folder under `packages/dashboard/src/components/themes/`
 - Test files are colocated as `*.test.ts` next to source files

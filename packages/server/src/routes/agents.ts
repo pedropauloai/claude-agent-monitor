@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { agentQueries, eventQueries } from '../db/queries.js';
-import { DEFAULT_EVENT_LIMIT } from '@cam/shared';
+import { DEFAULT_EVENT_LIMIT } from '@claudecam/shared';
 
 export const agentsRouter = Router();
 

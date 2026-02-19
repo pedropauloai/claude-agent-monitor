@@ -1,6 +1,6 @@
-import type { AgentZone, AgentAnimationState, AgentPose } from '@cam/shared';
-import { TOOL_TO_ZONE_MAP, TOOL_TO_POSE_MAP } from '@cam/shared';
-import type { AgentStatus } from '@cam/shared';
+import type { AgentZone, AgentAnimationState, AgentPose } from '@claudecam/shared';
+import { TOOL_TO_ZONE_MAP, TOOL_TO_POSE_MAP } from '@claudecam/shared';
+import type { AgentStatus } from '@claudecam/shared';
 
 export function getAgentZone(
   tool: string | null | undefined,

@@ -1,6 +1,6 @@
 import { useMemo, useRef, useCallback, useEffect, useState } from 'react';
 import { useProjectStore } from '../../../stores/project-store';
-import type { PRDTask, PRDTaskStatus } from '@cam/shared';
+import type { PRDTask, PRDTaskStatus } from '@claudecam/shared';
 
 // --- Constants ---
 

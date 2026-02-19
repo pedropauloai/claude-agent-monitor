@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { AgentMapPosition, AgentAnimationState, AgentPose } from '@cam/shared';
+import type { AgentMapPosition, AgentAnimationState, AgentPose } from '@claudecam/shared';
 import { AGENT_SPACING } from './scene-constants.js';
 
 /**

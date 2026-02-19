@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useSessionStore } from "../../../stores/session-store";
 import { formatRelativeTime } from "../../../lib/formatters";
 import { extractFilename } from "../../../lib/friendly-names.js";
-import type { FileChange } from "@cam/shared";
+import type { FileChange } from "@claudecam/shared";
 import * as api from "../../../lib/api";
 
 const CHANGE_TYPE_STYLES: Record<

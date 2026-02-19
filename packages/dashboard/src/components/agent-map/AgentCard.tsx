@@ -1,5 +1,5 @@
 import { memo, useRef, useEffect, useState } from 'react';
-import type { AgentAnimationState, AgentPose } from '@cam/shared';
+import type { AgentAnimationState, AgentPose } from '@claudecam/shared';
 import { ToolTrail } from './ToolTrail';
 import { AgentTimer } from './AgentTimer';
 import { useAgentMapStore } from '../../stores/agent-map-store';

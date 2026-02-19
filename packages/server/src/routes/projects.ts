@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { createProjectRequestSchema } from '@cam/shared';
+import { createProjectRequestSchema } from '@claudecam/shared';
 import {
   createProject,
   getProject,

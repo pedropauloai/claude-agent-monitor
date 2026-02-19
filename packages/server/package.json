@@ -1,5 +1,5 @@
 {
-  "name": "@cam/server",
+  "name": "@claudecam/server",
   "version": "0.1.0",
   "description": "Backend server for Claude Agent Monitor - Express + SQLite + REST API + SSE",
   "license": "MIT",
@@ -22,7 +22,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@cam/shared": "workspace:*",
+    "@claudecam/shared": "workspace:*",
     "better-sqlite3": "11.6.0",
     "cors": "^2.8.5",
     "express": "^4.21.0",

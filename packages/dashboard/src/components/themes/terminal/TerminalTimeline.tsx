@@ -2,7 +2,7 @@ import { useRef, useEffect, useMemo } from 'react';
 import { useSessionStore } from '../../../stores/session-store';
 import { useEvents } from '../../../hooks/use-events';
 import { formatTimestamp, truncatePath } from '../../../lib/formatters';
-import type { AgentEvent, EventCategory, HookType } from '@cam/shared';
+import type { AgentEvent, EventCategory, HookType } from '@claudecam/shared';
 
 const CATEGORY_CHARS: Record<string, string> = {
   tool_call: '*',

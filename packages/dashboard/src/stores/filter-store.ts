@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { EventCategory } from "@cam/shared";
+import type { EventCategory } from "@claudecam/shared";
 
 interface FilterState {
   agentFilter: string | null;

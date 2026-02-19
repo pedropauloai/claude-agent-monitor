@@ -1857,8 +1857,8 @@ Local server + Web dashboard + both Pillars + Agent Map Mission Floor + 3 themes
 - Active task detection hook
 - Automatic dependency suggestions between tasks
 - PRD/Workflow template for open-source distribution
-- PreToolUseRejected handler in @cam/hook
-- ToolError handler in @cam/hook
+- PreToolUseRejected handler in @claudecam/hook
+- ToolError handler in @claudecam/hook
 - Keyboard navigation (vim keys) in Terminal theme
 
 ### v2.0 - "Desktop App"
@@ -1896,7 +1896,7 @@ claude-agent-monitor/
 |
 |-- packages/
 |   |
-|   |-- cli/                  # @cam/cli - Main CLI
+|   |-- cli/                  # claudecam - Main CLI
 |   |   |-- package.json
 |   |   |-- tsconfig.json
 |   |   |-- src/
@@ -1917,7 +1917,7 @@ claude-agent-monitor/
 |   |           |-- hooks-config.ts
 |   |           |-- logger.ts
 |   |
-|   |-- hook/                 # @cam/hook - Hook binary (ultra-lightweight)
+|   |-- hook/                 # @claudecam/hook - Hook binary (ultra-lightweight)
 |   |   |-- package.json
 |   |   |-- tsconfig.json
 |   |   |-- src/
@@ -1931,7 +1931,7 @@ claude-agent-monitor/
 |   |       |   |-- compact.ts
 |   |       |-- transport.ts  # HTTP POST to server
 |   |
-|   |-- server/               # @cam/server - Backend
+|   |-- server/               # @claudecam/server - Backend
 |   |   |-- package.json
 |   |   |-- tsconfig.json
 |   |   |-- src/
@@ -1960,7 +1960,7 @@ claude-agent-monitor/
 |   |       |   |-- project-manager.ts     # Project/sprint CRUD (Pillar 2)
 |   |       |-- types.ts
 |   |
-|   |-- dashboard/            # @cam/dashboard - Frontend React
+|   |-- dashboard/            # @claudecam/dashboard - Frontend React
 |   |   |-- package.json
 |   |   |-- tsconfig.json
 |   |   |-- vite.config.ts
@@ -2076,7 +2076,7 @@ claude-agent-monitor/
 |   |           |-- projects.ts    # Pillar 2
 |   |           |-- tasks.ts       # Pillar 2
 |   |
-|   |-- shared/               # @cam/shared - Shared types
+|   |-- shared/               # @claudecam/shared - Shared types
 |       |-- package.json
 |       |-- tsconfig.json
 |       |-- src/

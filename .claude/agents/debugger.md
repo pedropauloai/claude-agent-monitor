@@ -11,7 +11,7 @@ Diagnostic steps:
 1. Reproduce: Check browser console (dashboard), server logs (terminal), SQLite data
 2. Trace the data flow: Hook -> Server API -> SQLite -> SSE -> Dashboard Store -> Component
 3. Common issues:
-   - Import errors: @cam/shared not built. Run `pnpm --filter @cam/shared build`
+   - Import errors: @claudecam/shared not built. Run `pnpm --filter @claudecam/shared build`
    - Port in use: `netstat -ano | grep <port>`, then kill the process
    - Empty dashboard: Check if useProject/useSprint/useTasks hooks are called in App.tsx
    - Kanban empty: Check status mapping (pending->planned, deferred->backlog)

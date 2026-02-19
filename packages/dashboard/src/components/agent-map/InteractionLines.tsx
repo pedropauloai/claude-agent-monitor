@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { InteractionLineData, AgentMapPosition } from '@cam/shared';
+import type { InteractionLineData, AgentMapPosition } from '@claudecam/shared';
 
 interface InteractionLinesProps {
   lines: InteractionLineData[];

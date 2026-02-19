@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { DEFAULT_SERVER_PORT, DEFAULT_DASHBOARD_PORT } from '@cam/shared';
+import { DEFAULT_SERVER_PORT, DEFAULT_DASHBOARD_PORT } from '@claudecam/shared';
 
 export interface CamConfig {
   serverPort: number;

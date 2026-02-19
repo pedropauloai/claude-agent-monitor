@@ -3,7 +3,7 @@ import { useSessionStore } from "../../../stores/session-store";
 import { useAgents } from "../../../hooks/use-agents";
 import { formatRelativeTime } from "../../../lib/formatters";
 import { getAgentDisplayName } from "../../../lib/friendly-names.js";
-import type { Agent } from "@cam/shared";
+import type { Agent } from "@claudecam/shared";
 
 const STATUS_CHARS: Record<string, string> = {
   active: "[*]",

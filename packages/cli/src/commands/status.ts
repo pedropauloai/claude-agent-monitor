@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import { execSync } from "node:child_process";
-import { DEFAULT_SERVER_PORT } from "@cam/shared";
+import { DEFAULT_SERVER_PORT } from "@claudecam/shared";
 import { logger } from "../utils/logger.js";
 import {
   readConfig,
@@ -194,7 +194,7 @@ export const statusCommand = new Command("status")
     );
 
     if (!camHookAvailable) {
-      logger.info(`Install: ${chalk.cyan("npm install -g @cam/cli")}`);
+      logger.info(`Install: ${chalk.cyan("npm install -g claudecam")}`);
     }
 
     // 6. Quick health summary

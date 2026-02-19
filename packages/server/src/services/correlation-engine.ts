@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import type { AgentEvent } from '@cam/shared';
-import { TASK_TOOLS } from '@cam/shared';
+import type { AgentEvent } from '@claudecam/shared';
+import { TASK_TOOLS } from '@claudecam/shared';
 import {
   prdTaskQueries,
   taskActivityQueries,

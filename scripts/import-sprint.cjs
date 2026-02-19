@@ -320,7 +320,7 @@ function openDatabase(dbPath, schemaPath, readOnly) {
       Database = require(path.resolve(projectRoot, "packages", "server", "node_modules", "better-sqlite3"));
     } catch {
       console.error("Error: Could not load better-sqlite3.");
-      console.error("Run: pnpm --filter @cam/server install");
+      console.error("Run: pnpm --filter @claudecam/server install");
       process.exit(1);
     }
   }

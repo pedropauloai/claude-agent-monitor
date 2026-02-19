@@ -1,4 +1,4 @@
-import type { SpeechBubbleData } from '@cam/shared';
+import type { SpeechBubbleData } from '@claudecam/shared';
 import { SpeechBubble } from '../agent-map/SpeechBubble.js';
 import { ToolTrail } from '../agent-map/ToolTrail.js';
 

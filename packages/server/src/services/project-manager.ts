@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { Project, Sprint, PRDTask } from '@cam/shared';
+import type { Project, Sprint, PRDTask } from '@claudecam/shared';
 import { projectQueries, sprintQueries, prdTaskQueries, prdDocumentQueries } from '../db/queries.js';
 import { parsePrd } from './prd-parser.js';
 import { sseManager } from './sse-manager.js';

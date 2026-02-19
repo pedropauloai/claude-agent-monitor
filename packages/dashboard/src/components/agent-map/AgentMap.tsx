@@ -5,7 +5,7 @@ import { AgentMapHeader } from "./AgentMapHeader";
 import { MissionFloor } from "./MissionFloor";
 import { InteractionLines } from "./InteractionLines";
 import { ParentChildLines } from "./ParentChildLines";
-import { getAgentPalette } from "@cam/shared";
+import { getAgentPalette } from "@claudecam/shared";
 import { getAgentDisplayName } from "../../lib/friendly-names.js";
 import "./agent-map.css";
 

@@ -75,7 +75,7 @@ function loadDatabase() {
       );
     } catch {
       console.error("ERRO: Nao foi possivel carregar better-sqlite3.");
-      console.error("Execute: pnpm --filter @cam/server install");
+      console.error("Execute: pnpm --filter @claudecam/server install");
       process.exit(1);
     }
   }

@@ -1,5 +1,5 @@
 {
-  "name": "@cam/cli",
+  "name": "claudecam",
   "version": "0.1.0",
   "description": "CLI for Claude Agent Monitor - Mission Control for Claude Code agents",
   "license": "MIT",
@@ -27,9 +27,9 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@cam/shared": "workspace:*",
-    "@cam/server": "workspace:*",
-    "@cam/hook": "workspace:*",
+    "@claudecam/shared": "workspace:*",
+    "@claudecam/server": "workspace:*",
+    "@claudecam/hook": "workspace:*",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "ora": "^8.1.0"

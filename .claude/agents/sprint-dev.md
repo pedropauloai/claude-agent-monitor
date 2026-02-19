@@ -16,7 +16,7 @@ Workflow:
 6. Test the change works with `pnpm dev`
 
 Rules:
-- Types go in @cam/shared first, then build shared before other packages
+- Types go in @claudecam/shared first, then build shared before other packages
 - Database changes need migrations via schema.sql
 - New API routes follow Express router pattern in packages/server/src/routes/
 - New dashboard components go in the correct theme folder

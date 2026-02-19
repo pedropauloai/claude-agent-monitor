@@ -3,7 +3,7 @@ import { useSessionStore } from "../../stores/session-store";
 import { useProjectStore } from "../../stores/project-store";
 import { useThemeStore } from "../../stores/theme-store";
 import * as api from "../../lib/api";
-import type { Session } from "@cam/shared";
+import type { Session } from "@claudecam/shared";
 
 interface SessionOption {
   id: string;

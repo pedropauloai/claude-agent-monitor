@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useProjectStore } from '../../../stores/project-store';
-import type { PRDTask, Sprint } from '@cam/shared';
+import type { PRDTask, Sprint } from '@claudecam/shared';
 
 const STATUS_CHARS: Record<string, { char: string; color: string }> = {
   backlog: { char: '.', color: 'terminal-dim' },

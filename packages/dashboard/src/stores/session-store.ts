@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { Session, Agent, AgentEvent } from "@cam/shared";
+import type { Session, Agent, AgentEvent } from "@claudecam/shared";
 
 export type ConnectionStatus = "connected" | "disconnected" | "reconnecting";
 

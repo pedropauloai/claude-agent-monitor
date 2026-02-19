@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { incomingEventSchema } from '@cam/shared';
+import { incomingEventSchema } from '@claudecam/shared';
 import { processEvent } from '../services/event-processor.js';
 import { correlateEvent } from '../services/correlation-engine.js';
 import { eventQueries } from '../db/queries.js';
-import { DEFAULT_EVENT_LIMIT } from '@cam/shared';
+import { DEFAULT_EVENT_LIMIT } from '@claudecam/shared';
 
 export const eventsRouter = Router();
 

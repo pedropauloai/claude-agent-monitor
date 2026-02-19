@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useProjectStore } from '../../../stores/project-store';
 import { getPriorityColor } from '../../../lib/formatters';
-import type { PRDTask, Sprint } from '@cam/shared';
+import type { PRDTask, Sprint } from '@claudecam/shared';
 
 interface SectionSummary {
   name: string;

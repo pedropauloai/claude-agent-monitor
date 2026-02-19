@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type RefObject } from 'react';
-import type { InteractionLineData, AgentMapPosition } from '@cam/shared';
+import type { InteractionLineData, AgentMapPosition } from '@claudecam/shared';
 
 interface ConnectionLines3DProps {
   /** Ref to the container element (for coordinate conversion) */

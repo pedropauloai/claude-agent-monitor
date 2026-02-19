@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import type { SpeechBubbleData } from "@cam/shared";
+import type { SpeechBubbleData } from "@claudecam/shared";
 
 interface SpeechBubbleProps {
   bubble: SpeechBubbleData;

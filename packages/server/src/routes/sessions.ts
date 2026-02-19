@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { DEFAULT_SESSION_LIMIT } from '@cam/shared';
+import { DEFAULT_SESSION_LIMIT } from '@claudecam/shared';
 import { listSessions, getSession, deleteSession, getSessionWithDetails, listSessionsByProject } from '../services/session-manager.js';
 import { sessionQueries, agentQueries } from '../db/queries.js';
 

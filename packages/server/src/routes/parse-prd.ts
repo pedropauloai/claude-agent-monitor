@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response, Router as RouterType } from 'express';
-import { parsePrdRequestSchema } from '@cam/shared';
+import { parsePrdRequestSchema } from '@claudecam/shared';
 import { parsePrd } from '../services/prd-parser.js';
 
 export const parsePrdRouter: RouterType = Router();

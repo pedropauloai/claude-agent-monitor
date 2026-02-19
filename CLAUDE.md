@@ -24,8 +24,8 @@ pnpm lint         # Lint all packages
 - ESM only (`import/export`), never CommonJS. All imports use `.js` extension.
 - Named exports only, no default exports (except React page components and App.tsx)
 - TypeScript strict mode. No `any`. Use `unknown` + type guards.
-- Shared types live in `@cam/shared`. NEVER duplicate types across packages.
-- `@cam/hook` MUST remain zero-dependency (only native Node.js modules).
+- Shared types live in `@claudecam/shared`. NEVER duplicate types across packages.
+- `@claudecam/hook` MUST remain zero-dependency (only native Node.js modules).
 
 ## Architecture Rules
 
@@ -37,7 +37,7 @@ pnpm lint         # Lint all packages
 
 ## Testing
 
-- Run single test: `pnpm --filter @cam/server test -- --grep "pattern"`
+- Run single test: `pnpm --filter @claudecam/server test -- --grep "pattern"`
 - Prefer integration tests over unit tests with heavy mocking.
 - Test files colocated as `*.test.ts` next to source.
 
@@ -49,7 +49,7 @@ pnpm lint         # Lint all packages
 
 ## Critical Gotchas
 
-- IMPORTANT: `@cam/shared` must be built before any other package. Run `pnpm --filter @cam/shared build` if you get import errors.
+- IMPORTANT: `@claudecam/shared` must be built before any other package. Run `pnpm --filter @claudecam/shared build` if you get import errors.
 - IMPORTANT: `better-sqlite3` needs native binaries. If install fails, run `pnpm rebuild better-sqlite3`.
 - IMPORTANT: Task status `pending` maps to Kanban column `planned`. Status `deferred` maps to `backlog`.
 - Dashboard fetches data via polling (15s intervals). SSE is for real-time agent events only.

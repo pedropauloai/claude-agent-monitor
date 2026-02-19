@@ -1,4 +1,4 @@
-import { MAX_INPUT_LENGTH, MAX_OUTPUT_LENGTH } from "@cam/shared";
+import { MAX_INPUT_LENGTH, MAX_OUTPUT_LENGTH } from "@claudecam/shared";
 import { sendEvent } from "../transport.js";
 
 export function handlePostToolUse(stdinData: Record<string, unknown>): void {

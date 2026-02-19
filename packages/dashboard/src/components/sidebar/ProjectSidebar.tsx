@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Project } from '@cam/shared';
+import type { Project } from '@claudecam/shared';
 import { useProjectStore } from '../../stores/project-store.js';
 import { useSessionStore } from '../../stores/session-store.js';
 import { useSettingsStore } from '../../stores/settings-store.js';

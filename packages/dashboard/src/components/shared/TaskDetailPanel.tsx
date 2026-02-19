@@ -9,7 +9,7 @@ import {
   formatRelativeTime,
   generateIdenticon,
 } from '../../lib/formatters';
-import type { PRDTask } from '@cam/shared';
+import type { PRDTask } from '@claudecam/shared';
 
 type TabId = 'overview' | 'dependencies' | 'activity';
 

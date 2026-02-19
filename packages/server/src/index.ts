@@ -6,7 +6,7 @@ import {
   DEFAULT_SERVER_PORT,
   DEFAULT_BIND_HOST,
   AGENT_IDLE_TIMEOUT_MS,
-} from "@cam/shared";
+} from "@claudecam/shared";
 import { initDb, closeDb } from "./db/index.js";
 import { sseManager } from "./services/sse-manager.js";
 import { agentQueries } from "./db/queries.js";

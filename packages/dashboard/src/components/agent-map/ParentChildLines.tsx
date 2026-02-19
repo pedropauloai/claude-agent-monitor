@@ -1,4 +1,4 @@
-import type { AgentMapPosition } from '@cam/shared';
+import type { AgentMapPosition } from '@claudecam/shared';
 
 interface ParentChildLinesProps {
   positions: Map<string, AgentMapPosition>;

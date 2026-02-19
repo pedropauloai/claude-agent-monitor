@@ -75,7 +75,7 @@ CAM tries to guess which project a session belongs to using time windows and aut
 - [x] Implement auto-install of hooks via cam init
   Priority: high
   Tags: cli, hooks
-  Description: Detect `.claude/settings.json` (global or local), add/update hook configuration pointing to `@cam/hook`. Back up original settings before modifying. Check if hooks already exist to avoid duplicates.
+  Description: Detect `.claude/settings.json` (global or local), add/update hook configuration pointing to `@claudecam/hook`. Back up original settings before modifying. Check if hooks already exist to avoid duplicates.
   Files: packages/cli/src/commands/init.ts
 
 - [x] Add hook validation with cam doctor

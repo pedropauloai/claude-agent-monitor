@@ -2,7 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { existsSync } from "node:fs";
 import { execSync } from "node:child_process";
-import { DEFAULT_SERVER_PORT } from "@cam/shared";
+import { DEFAULT_SERVER_PORT } from "@claudecam/shared";
 import { logger } from "../utils/logger.js";
 import {
   readConfig,
@@ -40,7 +40,7 @@ export const doctorCommand = new Command("doctor")
       label: "cam-hook binary in PATH",
       ok: camHookOk,
       detail: camHookOk ? "Found in PATH" : "Not found",
-      fix: "npm install -g @cam/cli",
+      fix: "npm install -g claudecam",
     });
 
     // 2. Check .claude/settings.json exists

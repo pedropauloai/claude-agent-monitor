@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import ora from 'ora';
-import { DEFAULT_SERVER_PORT } from '@cam/shared';
+import { DEFAULT_SERVER_PORT } from '@claudecam/shared';
 import { logger } from '../utils/logger.js';
 import { readConfig } from '../utils/config.js';
 

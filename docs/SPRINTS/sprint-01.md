@@ -8,7 +8,7 @@ Status: completed
 
 ### Motivation
 First sprint of the project. CAM does not exist yet - the entire foundation needs to be built from scratch.
-The goal is to create the complete monorepo with all 5 packages (@cam/shared, @cam/server, @cam/hook, @cam/cli, @cam/dashboard),
+The goal is to create the complete monorepo with all 5 packages (@claudecam/shared, @claudecam/server, @claudecam/hook, claudecam, @claudecam/dashboard),
 both pillars (Agent Monitor + PRD Tracker), the 3 visual themes, and all core components.
 This sprint turns the PRD idea into working software.
 
@@ -16,11 +16,11 @@ This sprint turns the PRD idea into working software.
 None. Project starts from scratch. Only the PRD exists as a reference document.
 
 ### Design Decisions
-- Monorepo with pnpm workspaces: each package independent but sharing types via @cam/shared
+- Monorepo with pnpm workspaces: each package independent but sharing types via @claudecam/shared
 - ESM only, TypeScript strict, named exports (project-wide standard defined here)
 - SQLite with WAL mode for concurrent reads (better than PostgreSQL for local use)
 - SSE for real-time (server -> dashboard), never WebSockets
-- @cam/hook zero-dependency: only native Node.js modules (critical for performance)
+- @claudecam/hook zero-dependency: only native Node.js modules (critical for performance)
 - 3 themes from the start: Modern (default), Pixel Art, Terminal
 - Zustand for state management (1 store per domain)
 - Express + REST API + SQLite via better-sqlite3
@@ -44,22 +44,22 @@ None. Project starts from scratch. Only the PRD exists as a reference document.
   Tags: infra, monorepo
   Description: Configure pnpm workspaces with 5 packages, shared scripts, and build pipeline.
 
-- [x] Create @cam/shared - shared types and schemas
+- [x] Create @claudecam/shared - shared types and schemas
   Priority: critical
   Tags: shared, types, zod
   Description: Create package with TypeScript types, Zod schemas, and constants. Must be built before all other packages.
 
-- [x] Create @cam/server - Node.js + SQLite + REST API + SSE
+- [x] Create @claudecam/server - Node.js + SQLite + REST API + SSE
   Priority: critical
   Tags: server, api, sqlite, sse
   Description: Build Express server with SQLite (better-sqlite3, WAL mode), REST endpoints, and SSE for real-time.
 
-- [x] Create @cam/hook - ultra-light hook binary
+- [x] Create @claudecam/hook - ultra-light hook binary
   Priority: critical
   Tags: hook, zero-dep
   Description: Build CLI binary using only native Node.js modules (http, fs). Zero external dependencies.
 
-- [x] Create @cam/cli - basic commands (init, start, status)
+- [x] Create claudecam - basic commands (init, start, status)
   Priority: critical
   Tags: cli, commander
   Description: Build CLI with Commander.js to manage CAM (init, start, status).

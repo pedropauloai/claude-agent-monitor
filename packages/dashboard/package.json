@@ -1,5 +1,5 @@
 {
-  "name": "@cam/dashboard",
+  "name": "@claudecam/dashboard",
   "version": "0.1.0",
   "description": "React dashboard for Claude Agent Monitor",
   "license": "MIT",
@@ -9,10 +9,12 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepack": "pnpm run build"
   },
+  "files": ["dist"],
   "dependencies": {
-    "@cam/shared": "workspace:*",
+    "@claudecam/shared": "workspace:*",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@splinetool/react-spline": "^4.1.0",

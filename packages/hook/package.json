@@ -1,5 +1,5 @@
 {
-  "name": "@cam/hook",
+  "name": "@claudecam/hook",
   "version": "0.1.0",
   "description": "Ultra-lightweight CLI binary for Claude Code hooks",
   "license": "MIT",
@@ -24,7 +24,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@cam/shared": "workspace:*"
+    "@claudecam/shared": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

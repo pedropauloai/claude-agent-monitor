@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Project, Sprint, PRDTask } from '@cam/shared';
+import type { Project, Sprint, PRDTask } from '@claudecam/shared';
 
 export type ViewMode = 'agents' | 'tracker';
 

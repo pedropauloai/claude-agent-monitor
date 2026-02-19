@@ -6,7 +6,7 @@ import {
   truncatePath,
   formatDuration,
 } from '../../../lib/formatters';
-import type { AgentEvent, EventCategory, HookType } from '@cam/shared';
+import type { AgentEvent, EventCategory, HookType } from '@claudecam/shared';
 
 /** Pixel-styled category colors */
 const CATEGORY_COLORS: Record<string, string> = {

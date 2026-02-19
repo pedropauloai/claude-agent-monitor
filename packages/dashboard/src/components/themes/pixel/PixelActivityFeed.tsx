@@ -9,7 +9,7 @@ import {
   extractFilename,
 } from "../../../lib/friendly-names.js";
 import { formatToolName, formatEventInput, formatEventOutput } from "../../../lib/event-formatters.js";
-import type { AgentEvent } from "@cam/shared";
+import type { AgentEvent } from "@claudecam/shared";
 
 const POLLING_TOOLS = new Set(["TaskList", "TaskGet"]);
 

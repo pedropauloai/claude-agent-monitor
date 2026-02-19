@@ -9,7 +9,7 @@ import {
   generateIdenticon,
   extractSprintLabel,
 } from '../../../lib/formatters';
-import type { PRDTask, PRDTaskStatus } from '@cam/shared';
+import type { PRDTask, PRDTaskStatus } from '@claudecam/shared';
 
 const COLUMN_HEADER_COLORS: Record<string, string> = {
   backlog: 'text-gray-400',

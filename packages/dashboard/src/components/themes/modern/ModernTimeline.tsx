@@ -8,7 +8,7 @@ import {
   truncatePath,
   formatDuration,
 } from '../../../lib/formatters';
-import type { AgentEvent, EventCategory, HookType } from '@cam/shared';
+import type { AgentEvent, EventCategory, HookType } from '@claudecam/shared';
 
 /* ------------------------------------------------------------------ */
 /*  Lookup tables for event type styling                               */

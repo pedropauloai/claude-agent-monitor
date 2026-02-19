@@ -3,7 +3,7 @@ import chalk from "chalk";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { execSync } from "node:child_process";
-import { DEFAULT_SERVER_PORT } from "@cam/shared";
+import { DEFAULT_SERVER_PORT } from "@claudecam/shared";
 import { logger } from "../utils/logger.js";
 import {
   claudeSettingsExist,

@@ -1,4 +1,4 @@
-import { MAX_INPUT_LENGTH } from "@cam/shared";
+import { MAX_INPUT_LENGTH } from "@claudecam/shared";
 import { sendEvent } from "../transport.js";
 
 export function handlePreToolUse(stdinData: Record<string, unknown>): void {

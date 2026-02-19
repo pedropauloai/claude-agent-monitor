@@ -2,7 +2,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { AdaptiveDpr } from '@react-three/drei';
 import { useRef, useEffect, useMemo } from 'react';
 import type { Group, OrthographicCamera } from 'three';
-import type { AgentPose } from '@cam/shared';
+import type { AgentPose } from '@claudecam/shared';
 import {
   CodingIndicator,
   ReadingIndicator,

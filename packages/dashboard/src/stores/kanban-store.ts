@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { PRDTaskStatus } from '@cam/shared';
+import type { PRDTaskStatus } from '@claudecam/shared';
 
 export const KANBAN_COLUMNS: { id: PRDTaskStatus; label: string }[] = [
   { id: 'backlog', label: 'Backlog' },

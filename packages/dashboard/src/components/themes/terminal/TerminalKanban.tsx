@@ -3,7 +3,7 @@ import { KANBAN_COLUMNS } from '../../../stores/kanban-store';
 import { useTasks } from '../../../hooks/use-tasks';
 import { useResolveAgentName } from '../../../hooks/use-resolve-agent-name';
 import { extractSprintLabel } from '../../../lib/formatters';
-import type { PRDTask, PRDTaskStatus } from '@cam/shared';
+import type { PRDTask, PRDTaskStatus } from '@claudecam/shared';
 
 const COLUMN_CHARS: Record<string, string> = {
   backlog: '.',

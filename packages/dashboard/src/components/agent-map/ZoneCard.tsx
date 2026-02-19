@@ -1,6 +1,6 @@
 import { type ReactNode, memo } from 'react';
-import type { AgentZone } from '@cam/shared';
-import { ZONE_META } from '@cam/shared';
+import type { AgentZone } from '@claudecam/shared';
+import { ZONE_META } from '@claudecam/shared';
 import { getZoneColor, getZoneIconPixel } from './zone-logic';
 
 interface ZoneCardProps {

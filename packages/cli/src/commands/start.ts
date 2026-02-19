@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { existsSync } from "node:fs";
-import { DEFAULT_SERVER_PORT, DEFAULT_DASHBOARD_PORT } from "@cam/shared";
+import { DEFAULT_SERVER_PORT, DEFAULT_DASHBOARD_PORT } from "@claudecam/shared";
 import { logger } from "../utils/logger.js";
 import { writeConfig } from "../utils/config.js";
 
@@ -73,7 +73,7 @@ export const startCommand = new Command("start")
       let serverEntryPoint: string;
       try {
         const require = createRequire(import.meta.url);
-        serverEntryPoint = require.resolve("@cam/server");
+        serverEntryPoint = require.resolve("@claudecam/server");
       } catch {
         // Fallback: try relative path in monorepo
         const thisDir = import.meta.url;
@@ -140,7 +140,7 @@ export const startCommand = new Command("start")
       serverProcess.on("error", (err) => {
         logger.error(`Failed to start server: ${err.message}`);
         logger.info(
-          "Make sure @cam/server is built. Run: pnpm --filter @cam/server build",
+          "Make sure @claudecam/server is built. Run: pnpm --filter @claudecam/server build",
         );
         process.exit(1);
       });
@@ -190,10 +190,10 @@ export const startCommand = new Command("start")
   );
 
 function resolveDashboardPath(): string | undefined {
-  // Try to resolve @cam/dashboard's dist folder
+  // Try to resolve @claudecam/dashboard's dist folder
   try {
     const require = createRequire(import.meta.url);
-    const dashboardPkg = require.resolve("@cam/dashboard/package.json");
+    const dashboardPkg = require.resolve("@claudecam/dashboard/package.json");
     const dashboardDir = dirname(dashboardPkg);
     const distPath = join(dashboardDir, "dist");
     if (existsSync(join(distPath, "index.html"))) {

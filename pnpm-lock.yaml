@@ -10,13 +10,13 @@ importers:
 
   packages/cli:
     dependencies:
-      '@cam/hook':
+      '@claudecam/hook':
         specifier: workspace:*
         version: link:../hook
-      '@cam/server':
+      '@claudecam/server':
         specifier: workspace:*
         version: link:../server
-      '@cam/shared':
+      '@claudecam/shared':
         specifier: workspace:*
         version: link:../shared
       chalk:
@@ -38,7 +38,7 @@ importers:
 
   packages/dashboard:
     dependencies:
-      '@cam/shared':
+      '@claudecam/shared':
         specifier: workspace:*
         version: link:../shared
       '@react-three/drei':
@@ -105,7 +105,7 @@ importers:
 
   packages/hook:
     dependencies:
-      '@cam/shared':
+      '@claudecam/shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:
@@ -118,7 +118,7 @@ importers:
 
   packages/server:
     dependencies:
-      '@cam/shared':
+      '@claudecam/shared':
         specifier: workspace:*
         version: link:../shared
       better-sqlite3:

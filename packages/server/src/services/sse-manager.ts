@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import { SSE_HEARTBEAT_INTERVAL_MS } from '@cam/shared';
+import { SSE_HEARTBEAT_INTERVAL_MS } from '@claudecam/shared';
 
 interface SSEClient {
   id: string;

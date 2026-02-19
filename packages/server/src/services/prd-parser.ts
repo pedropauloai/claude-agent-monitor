@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { PRDSection, PRDTask } from '@cam/shared';
+import type { PRDSection, PRDTask } from '@claudecam/shared';
 
 interface ParsedPRD {
   sections: PRDSection[];

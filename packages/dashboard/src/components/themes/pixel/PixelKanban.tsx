@@ -3,7 +3,7 @@ import { KANBAN_COLUMNS } from '../../../stores/kanban-store';
 import { useTasks } from '../../../hooks/use-tasks';
 import { useResolveAgentName } from '../../../hooks/use-resolve-agent-name';
 import { getPriorityColor, generateIdenticon, extractSprintLabel } from '../../../lib/formatters';
-import type { PRDTask, PRDTaskStatus } from '@cam/shared';
+import type { PRDTask, PRDTaskStatus } from '@claudecam/shared';
 
 /** RPG quest status labels */
 const QUEST_STATUS: Record<string, { label: string; icon: string; color: string }> = {

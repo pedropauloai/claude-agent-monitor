@@ -3,7 +3,7 @@ import { SSEClient } from "../lib/sse";
 import { useSessionStore } from "../stores/session-store";
 import { useProjectStore } from "../stores/project-store";
 import { useNotificationStore } from "../stores/notification-store";
-import type { AgentEvent, Agent } from "@cam/shared";
+import type { AgentEvent, Agent } from "@claudecam/shared";
 
 export function useSSE(sessionId?: string) {
   const clientRef = useRef<SSEClient | null>(null);

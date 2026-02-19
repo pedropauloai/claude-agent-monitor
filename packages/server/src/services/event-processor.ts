@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AgentEvent, EventCategory, HookType } from "@cam/shared";
+import type { AgentEvent, EventCategory, HookType } from "@claudecam/shared";
 import {
   FILE_CHANGE_TOOLS,
   FILE_READ_TOOLS,
@@ -7,7 +7,7 @@ import {
   MESSAGE_TOOLS,
   MAX_INPUT_LENGTH,
   MAX_OUTPUT_LENGTH,
-} from "@cam/shared";
+} from "@claudecam/shared";
 import {
   eventQueries,
   agentQueries,

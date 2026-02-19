@@ -6,7 +6,7 @@ import type {
   AgentMapPosition,
   SpeechBubbleData,
   InteractionLineData,
-} from '@cam/shared';
+} from '@claudecam/shared';
 
 interface AgentMapState {
   positions: Map<string, AgentMapPosition>;

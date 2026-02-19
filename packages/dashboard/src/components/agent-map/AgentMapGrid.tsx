@@ -1,4 +1,4 @@
-import type { AgentZone, AgentMapPosition } from '@cam/shared';
+import type { AgentZone, AgentMapPosition } from '@claudecam/shared';
 import { ZoneCard } from './ZoneCard';
 
 const ZONE_ORDER: AgentZone[] = [
