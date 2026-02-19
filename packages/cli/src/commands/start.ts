@@ -78,6 +78,12 @@ export const startCommand = new Command("start")
           logger.info(
             `Dashboard: ${chalk.cyan(`http://localhost:${serverPort}`)}`,
           );
+          logger.info(
+            `To restart: ${chalk.cyan("Ctrl+C")} on the running server, then run ${chalk.cyan("cam start")} again`,
+          );
+          logger.info(
+            `To use a different port: ${chalk.cyan(`cam start --port ${serverPort + 10}`)}`,
+          );
           logger.blank();
           return;
         }
@@ -99,6 +105,7 @@ export const startCommand = new Command("start")
 
       // Resolve the dashboard dist path for static file serving
       const dashboardDistPath = resolveDashboardPath();
+      const dbPath = join(process.cwd(), "cam-data.db");
 
       if (dashboardDistPath) {
         logger.keyValue("Server", `http://localhost:${serverPort}`);
@@ -114,12 +121,14 @@ export const startCommand = new Command("start")
         );
       }
       logger.keyValue("Theme", options.theme);
+      logger.keyValue("Database", chalk.gray(dbPath));
       logger.blank();
 
-      // Start server process
+      // Start server process - database in project directory
       const env: Record<string, string> = {
         ...(process.env as Record<string, string>),
         CAM_PORT: String(serverPort),
+        CAM_DB_PATH: dbPath,
         CAM_THEME: options.theme,
         NODE_ENV: process.env["NODE_ENV"] ?? "production",
       };
