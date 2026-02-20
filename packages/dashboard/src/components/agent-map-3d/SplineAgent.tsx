@@ -187,6 +187,11 @@ export const SplineAgent = memo(function SplineAgent({
       // Spline receives the native events directly.
       if (isOverCanvas) return;
 
+      // Only forward when pointer is inside the agent container bounds.
+      // This prevents interference with resize handles and other panels.
+      const rect = container!.getBoundingClientRect();
+      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
+
       canvas!.dispatchEvent(
         new PointerEvent('pointermove', {
           clientX: e.clientX,

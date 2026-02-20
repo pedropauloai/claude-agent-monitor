@@ -10,13 +10,13 @@ import type { ThemeName } from '../../stores/settings-store.js';
 // === Interfaces ===
 
 interface HorizontalLayoutProps {
-  id: string;
+  id?: string;
   children: ReactNode;
   locked?: boolean;
 }
 
 interface VerticalLayoutProps {
-  id: string;
+  id?: string;
   children: ReactNode;
   locked?: boolean;
 }
@@ -166,7 +166,7 @@ export function HorizontalLayout({ id, children }: HorizontalLayoutProps) {
   return (
     <PanelGroup
       direction="horizontal"
-      autoSaveId={id}
+      {...(id ? { autoSaveId: id } : {})}
       className="flex-1 overflow-hidden"
     >
       {children}
@@ -178,7 +178,7 @@ export function VerticalLayout({ id, children }: VerticalLayoutProps) {
   return (
     <PanelGroup
       direction="vertical"
-      autoSaveId={id}
+      {...(id ? { autoSaveId: id } : {})}
       className="flex-1 flex flex-col overflow-hidden"
     >
       {children}

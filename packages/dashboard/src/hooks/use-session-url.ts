@@ -30,10 +30,19 @@ export function useSessionUrl() {
 
   // store -> URL: when active session changes, update URL
   useEffect(() => {
-    if (!session) return;
+    const params = new URLSearchParams(window.location.search);
+
+    if (!session) {
+      // Session cleared (e.g. project switch) — remove session_id from URL
+      if (params.has('session_id')) {
+        params.delete('session_id');
+        const qs = params.toString();
+        window.history.replaceState({}, '', qs ? `?${qs}` : window.location.pathname);
+      }
+      return;
+    }
 
     const shortId = session.id.slice(0, 8);
-    const params = new URLSearchParams(window.location.search);
     const currentParam = params.get('session_id');
 
     // Only update if different (avoid unnecessary replaceState)

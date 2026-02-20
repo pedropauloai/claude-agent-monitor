@@ -1,6 +1,7 @@
 import Spline from '@splinetool/react-spline';
 import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import { SPLINE_URLS } from './scene-constants.js';
+import { ShaderBackground } from './ShaderBackground.js';
 
 /**
  * Minimal type for accessing Spline runtime internals.
@@ -101,6 +102,12 @@ export function NexbotGuide({
 
     function onGlobalPointerMove(e: PointerEvent) {
       if (isOverCanvas) return;
+
+      // Only forward when pointer is inside the container bounds.
+      // This prevents interference with resize handles and other panels.
+      const rect = container!.getBoundingClientRect();
+      if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) return;
+
       canvas!.dispatchEvent(
         new PointerEvent('pointermove', {
           clientX: e.clientX,
@@ -125,10 +132,13 @@ export function NexbotGuide({
 
   return (
     <div className="relative w-full h-full overflow-hidden">
-      {/* NEXBOT 3D Model — fills entire area */}
+      {/* Animated aurora shader background */}
+      <ShaderBackground />
+
+      {/* NEXBOT 3D Model — fills entire area, above shader */}
       <div
         ref={containerRef}
-        className="absolute inset-0"
+        className="absolute inset-0 z-[1]"
       >
         {/* Loading spinner */}
         {isLoading && (
@@ -157,7 +167,7 @@ export function NexbotGuide({
 
       {/* Gradient overlay for text readability */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none z-[2]"
         style={{
           background: 'linear-gradient(to top, rgba(10,10,18,0.95) 0%, rgba(10,10,18,0.6) 25%, transparent 50%)',
         }}
@@ -166,7 +176,7 @@ export function NexbotGuide({
       {/* Ambient glow */}
       {!isLoading && (
         <div
-          className="absolute inset-0 pointer-events-none transition-all duration-1000"
+          className="absolute inset-0 pointer-events-none transition-all duration-1000 z-[2]"
           style={{
             boxShadow: `inset 0 0 80px ${colors.accent}08, inset 0 0 160px ${colors.accent}04`,
           }}
@@ -174,7 +184,7 @@ export function NexbotGuide({
       )}
 
       {/* Instruction text — anchored to bottom */}
-      <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-2.5 p-8 pb-10 pointer-events-none">
+      <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-2.5 p-8 pb-10 pointer-events-none z-[3]">
         <h3 className={`${colors.text} text-lg font-mono font-semibold`}>
           {title}
         </h3>
