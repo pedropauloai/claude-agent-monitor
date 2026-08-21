@@ -1,2 +1,17 @@
 packages:
   - "packages/*"
+
+# MIGRADO EM 20/08/2026, e sem isso o repo nao instala nesta maquina.
+#
+# O campo vivia em package.json como `pnpm.onlyBuiltDependencies`, e o pnpm
+# 11.11 nao le mais aquele lugar: ele avisa "no longer read", ignora a
+# aprovacao, e o install para pedindo `pnpm approve-builds`. O efeito era
+# `npm run typecheck` e `npm run build` nao rodarem, ou seja, nenhum agente
+# conseguia verificar nada neste repositorio.
+#
+# better-sqlite3 ja estava aprovado no campo antigo, entao aqui so continua.
+# esbuild entra porque o vite depende dele e o script de instalacao dele e o
+# que baixa o binario da plataforma.
+allowBuilds:
+  better-sqlite3: false
+  esbuild: true
