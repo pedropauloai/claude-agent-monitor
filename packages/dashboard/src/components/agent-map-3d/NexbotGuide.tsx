@@ -5,7 +5,7 @@ import { ShaderBackground } from './ShaderBackground.js';
 
 /**
  * Minimal type for accessing Spline runtime internals.
- * Used to disable the watermark shader pass and adjust camera zoom.
+ * Used to disable the watermark shader pass.
  */
 interface SplineInternals {
   _renderer?: {
@@ -15,7 +15,6 @@ interface SplineInternals {
     };
   };
   play?: () => void;
-  setZoom?: (zoom: number) => void;
 }
 
 const VARIANT_STYLES = {
@@ -68,14 +67,8 @@ export function NexbotGuide({
       // Internal API may change between runtime versions
     }
 
-    // Zoom in for a close-up of the robot's head
-    try {
-      internals.setZoom?.(1.8);
-    } catch {
-      // setZoom may not exist in all runtime versions
-    }
-
     // Restart animation loop after pipeline modification
+    // (let the original camera animation play — zoom-out from face to body)
     try {
       internals.play?.();
     } catch {

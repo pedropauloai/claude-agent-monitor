@@ -76,6 +76,9 @@ export const useSessionStore = create<SessionState>((set) => ({
     set((state) => {
       // Only accept events belonging to the current session
       if (state.session && event.sessionId !== state.session.id) return state;
+      // Deduplicate: SSE project-level broadcast can deliver the same event
+      // multiple times (once per session in the project)
+      if (state.events.some((e) => e.id === event.id)) return state;
       return { events: [event, ...state.events].slice(0, 500) };
     }),
 

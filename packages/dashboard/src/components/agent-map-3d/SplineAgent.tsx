@@ -22,8 +22,6 @@ interface SplineInternals {
       logoOverlayPass?: { enabled: boolean };
     };
   };
-  /** Stops the internal requestAnimationFrame loop */
-  stop?: () => void;
   /** Restarts the internal RAF loop */
   play?: () => void;
 }
@@ -148,7 +146,7 @@ export const SplineAgent = memo(function SplineAgent({
       // Silently ignore — internal API may change between runtime versions
     }
 
-    // Restart animation loop after pipeline modification
+    // Restart render loop after pipeline modification
     try {
       internals.play?.();
     } catch {

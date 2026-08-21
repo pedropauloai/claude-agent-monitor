@@ -155,21 +155,22 @@ export function AgentMap3D() {
   );
 
   // Always show at least the main Claude agent
-  const displayAgents: AgentLayout3D[] = active.length > 0
-    ? active
-    : [{
-        agentId: 'claude-main',
-        position: [0, 0, 0],
-        modelType: 'main' as const,
-        color: '#8b5cf6',
-        name: 'Claude',
-        type: 'general-purpose',
-        pose: 'idle' as const,
-        animationState: 'idle' as const,
-        activityLabel: null,
-        lastTool: null,
-        parentAgentId: null,
-      }];
+  const displayAgents = useMemo<AgentLayout3D[]>(() => {
+    if (active.length > 0) return active;
+    return [{
+      agentId: 'claude-main',
+      position: [0, 0, 0],
+      modelType: 'main' as const,
+      color: '#8b5cf6',
+      name: 'Claude',
+      type: 'general-purpose',
+      pose: 'idle' as const,
+      animationState: 'idle' as const,
+      activityLabel: null,
+      lastTool: null,
+      parentAgentId: null,
+    }];
+  }, [active]);
 
   // Stable agent ID string for memo dependency (avoids .map().join() on every render)
   const agentIdKey = useMemo(
@@ -226,7 +227,7 @@ export function AgentMap3D() {
       }
       return next;
     });
-  }, [agentIdKey, displayAgents]);
+  }, [agentIdKey]);
 
   // Get final position for an agent (custom overrides default)
   const getAgentPos = useCallback(
@@ -318,7 +319,7 @@ export function AgentMap3D() {
       const timer = setTimeout(() => setSpawningAgentIds(new Set()), 1500);
       return () => clearTimeout(timer);
     }
-  }, [agentIdKey, displayAgents]);
+  }, [agentIdKey]);
 
   // --- Double-click reset (only on empty space, not on agents) ---
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
